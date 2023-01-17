@@ -1,47 +1,62 @@
-"""
-@name_of_file
-test_bench_gui.py
+##
+# @file
+# test_bench_gui.py
+#
+# @brief
+# This file acts as the main file for the Zimmer testbench GUI.
+# All components positioning will be done here while the corresponding functions
+#    will be called from other files.
 
-@brief
-This file acts as the main file for the Zimmer testbench GUI
-All components positioning will be done here while the corresponding functions
-    will be called from other files
-"""
-
+# Imports
 import tkinter
 import customtkinter
 import tkinter.messagebox
 
-def button_event(textbox_name_of_program):
-    print(textbox_name_of_program)
+# Global constants
+## The width of the GUI Home Page
+WIDTH = 780
+
+## The height of the GUI Home Page
+HEIGHT = 520
+
+# Functions
+def button_event(text):
+    """! Prints out a given text
+    @param textbox_name_of_program      The text to be printed out
+    """
+    print(text)
 
 def set_appearance_gui(appearance_mode, default_color_theme):
-    """Set appearance of the GUI
+    """! Sets the appearance of the GUI
+    @param appearance_mode          Appearance to give to the GUI
+    @param default_color_theme      Color theme to give to the GUI
     """
     customtkinter.set_appearance_mode(appearance_mode)
     customtkinter.set_default_color_theme(default_color_theme)
 
+# Classes
 class HomePage(customtkinter.CTk):
-    """Main page for the testbench GUI
+    """! Main page for the testbench GUI
+    Defines all components of the testbench home page
     """
-    WIDTH = 780
-    HEIGHT = 520
 
     def __init__(self, name_of_page):
-        """Initialisation of a new window propreties upon creation of the object
-
-        Args:
-            name_of_page (string): Name to be given to the window object
+        """! Initialisation of a new window propreties upon creation of the object
+        @param name_of_page Name to be given to the home page window
+        @return An instance of the test bench GUI home page
         """
-        
         super().__init__()
 
+        ## Title of the home page
         self.title(name_of_page)
-        self.geometry(f"{HomePage.WIDTH} x {HomePage.HEIGHT}")
+
+        ## Shape of the home page
+        self.geometry(f"{WIDTH} x {HEIGHT}")
+
+        ## Closing procedure for home page window
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        """Programs page button - Switches to the programs list page
-        """
+        ## Button to access the available test programs
         button_programs_page = customtkinter.CTkButton( text = "Programs",
                                                         command = lambda: button_event("txtbx_name_of_program"),
                                                         width = 120,
@@ -51,13 +66,12 @@ class HomePage(customtkinter.CTk):
         button_programs_page.place(relx = 0.3, rely = 0.3, anchor = tkinter.CENTER)
 
     def on_closing(self):
-        """Procedure to follow upon closing a window object
+        """! Procedure to follow upon closing a window object
         """
         self.destroy()
 
-
 if __name__ == "__main__":
-    """Entry point of file
+    """! Main program entry
     """
     set_appearance_gui("Dark", "blue")
     window_home = HomePage("Home - Zimmer Biomet Test Bench")
