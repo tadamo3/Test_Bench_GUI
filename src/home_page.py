@@ -1,43 +1,36 @@
 ##
 # @file
-# test_bench_gui.py
+# home_page.py
 #
 # @brief
-# This file acts as the main file for the Zimmer testbench GUI.
-# All components positioning will be done here while the corresponding functions
-#    will be called from other files.
+# This file acts as the setup file for the home page of the GUI. \n
+# All its components and callback functions will be defined here.
 
 # Imports
 import tkinter
 import customtkinter
 import tkinter.messagebox
 
+import common
+
 # Global constants
-## The width of the GUI Home Page
+## The width of the home page
 WIDTH = 780
 
-## The height of the GUI Home Page
+## The height of the home page
 HEIGHT = 520
 
 # Functions
 def button_event(text):
     """! Prints out a given text
-    @param textbox_name_of_program      The text to be printed out
+    @param textbox_name_of_program  The text to be printed out
     """
     print(text)
 
-def set_appearance_gui(appearance_mode, default_color_theme):
-    """! Sets the appearance of the GUI
-    @param appearance_mode          Appearance to give to the GUI
-    @param default_color_theme      Color theme to give to the GUI
-    """
-    customtkinter.set_appearance_mode(appearance_mode)
-    customtkinter.set_default_color_theme(default_color_theme)
-
 # Classes
 class HomePage(customtkinter.CTk):
-    """! Main page for the testbench GUI
-    Defines all components of the testbench home page
+    """! Home page for the testbench GUI
+    Defines all components of the home page
     """
 
     def __init__(self, name_of_page):
@@ -57,13 +50,13 @@ class HomePage(customtkinter.CTk):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         ## Button to access the available test programs
-        button_programs_page = customtkinter.CTkButton( text = "Programs",
+        btn_programs_page = customtkinter.CTkButton( text = "Programs",
                                                         command = lambda: button_event("txtbx_name_of_program"),
                                                         width = 120,
                                                         height = 32,
                                                         border_width = 0,
                                                         corner_radius = 8)
-        button_programs_page.place(relx = 0.3, rely = 0.3, anchor = tkinter.CENTER)
+        btn_programs_page.place(relx = 0.3, rely = 0.3, anchor = tkinter.CENTER)
 
     def on_closing(self):
         """! Procedure to follow upon closing a window object
@@ -73,6 +66,6 @@ class HomePage(customtkinter.CTk):
 if __name__ == "__main__":
     """! Main program entry
     """
-    set_appearance_gui("Dark", "blue")
+    common.set_appearance("Dark", "blue")
     window_home = HomePage("Home - Zimmer Biomet Test Bench")
     window_home.mainloop()
