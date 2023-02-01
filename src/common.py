@@ -21,6 +21,22 @@ def set_appearance(appearance_mode, default_color_theme):
     customtkinter.set_appearance_mode(appearance_mode)
     customtkinter.set_default_color_theme(default_color_theme)
 
+def page_selector(page_to_select):
+    """! Switches to the desired page (puts the page frame on top of all other frames)
+    @param page_to_select   The page to switch to
+    """
+    
+
+
+
+
+
+
+
+
+
+
+
 def generate_window(window_type, window_name):
     """! Generates a given window type
     @param window_type  Window type to be created
@@ -41,7 +57,6 @@ def generate_window(window_type, window_name):
     
     if (window != None):
         window.state('zoomed')
-
         return window
     else:
         print('Error in creating window')
