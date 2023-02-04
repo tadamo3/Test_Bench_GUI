@@ -10,7 +10,6 @@ import tkinter
 import customtkinter
 
 import home_page
-import programs_page
 
 # Functions
 def set_appearance(appearance_mode, default_color_theme):

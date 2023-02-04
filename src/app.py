@@ -11,7 +11,6 @@ import customtkinter
 
 import common
 import home_page
-import programs_page
 
 # Global constants
 ## The width and height of the App
@@ -23,36 +22,40 @@ INDEX_HOME = 0
 INDEX_PROGRAMS = 1
 INDEX_LOGS = 2
 
+# Functions
+def frame_selector(position, frame_to_init):
+        """! Puts a new frame on top of the current frame.
+        @param position         Desired location of the frame
+        @param frame_to_init    Frame to initialize and put on top of others
+        """
+        # Clear out every possible frame that is not the frame to initialize
+        for i in range(len(App.dict_frames)):
+            if (App.list_frames[i] != frame_to_init):
+                    App.dict_frames[App.list_frames[i]].pack_forget()
+        
+        # Initialize the correct frame
+        App.dict_frames[frame_to_init].pack(
+                                            in_         = position, 
+                                            side        = tkinter.TOP, 
+                                            fill        = tkinter.BOTH, 
+                                            expand      = True, 
+                                            padx        = 0, 
+                                            pady        = 0)
+
 # Classes
 class App(customtkinter.CTk):
-    """! App class for the Zimmer Test Bench
+    """! App class for the Zimmer Test Bench\n
     Defines the components to select different pages
     """
 
-    ## All pages accessible by user
-    list_pages = ["Home", "Programs", "Logs"]
-    dict_pages = {"Home" : None, "Programs" : None, "Logs" : None}
-
-    ## Colors
-    list_colors = ["red", "blue", "green"]
-
-    def page_selector(self, page_to_switch):
-        """! Puts a new page (frame) on top of the current page.
-        @param page_to_switch      Page (frame) to put on top of the frame stack 
-        """
-        #self.pages[current_page].pack_forget()
-        self.dict_pages[page_to_switch].pack(in_         = self.right_side_container, 
-                                             side        = tkinter.TOP, 
-                                             fill        = tkinter.BOTH, 
-                                             expand      = True, 
-                                             padx        = 0, 
-                                             pady        = 0
-                                            )
+    ## All frames to be shown - The list purpose is to simplify index accessing
+    list_frames = ["Home", "Programs", "Logs"]
+    dict_frames = {"Home" : None, "Programs" : None, "Logs" : None}
 
     def __init__(self, name_of_window):
         """! Initialisation of a new App object and generation of all related frames
         @param name_of_window     Name to be given to the App window
-        @return An instance of the App window
+        @return An instance of the App window containing all different populated frames to be shown
         """
         super().__init__()
 
@@ -69,36 +72,56 @@ class App(customtkinter.CTk):
         ## Closing procedure for App window
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        ## Generate main container and panel
+        ## Generate main container to contain all frames
         main_container = customtkinter.CTkFrame(self)
-        main_container.pack(fill=tkinter.BOTH, expand=True, padx=10, pady=10)
+        main_container.pack(
+                            fill    = tkinter.BOTH,
+                            expand  = True,
+                            padx    = 10,
+                            pady    = 10)
 
-        # left side panel -> for frame selection
+        ## Left side panel creation for frame selection
         left_side_panel = customtkinter.CTkFrame(main_container, width=150)
-        left_side_panel.pack(side=tkinter.LEFT, fill=tkinter.Y, expand=False, padx=10, pady=10)
+        left_side_panel.pack(
+                            side    = tkinter.LEFT,
+                            fill    = tkinter.Y,
+                            expand  = False,
+                            padx    = 10,
+                            pady    = 10)
 
-         # right side panel -> to show the frame1 or frame 2
-        self.right_side_panel = customtkinter.CTkFrame(main_container)
-        self.right_side_panel.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True, padx=0, pady=0)
+        ## Right side panel to show all different frames
+        right_side_panel = customtkinter.CTkFrame(main_container)
+        right_side_panel.pack(
+                            side    = tkinter.LEFT,
+                            fill    = tkinter.BOTH,
+                            expand  = True, 
+                            padx    = 0,
+                            pady    = 0)
 
-        self.right_side_container = customtkinter.CTkFrame(self.right_side_panel)
-        self.right_side_container.pack(side=tkinter.LEFT, fill=tkinter.BOTH, expand=True, padx=0, pady=0)
+        ## Right side container to contain the right panel
+        right_side_container = customtkinter.CTkFrame(right_side_panel)
+        right_side_container.pack(
+                                side    = tkinter.LEFT,
+                                fill    = tkinter.BOTH,
+                                expand  = True,
+                                padx    = 0,
+                                pady    = 0)
 
-        ## Populate the different frames and generate window selector
-        list_btn = []
-        for i in range(len(self.list_pages)):
-            self.dict_pages[self.list_pages[i]] = customtkinter.CTkFrame(fg_color=self.list_colors[i])
-            list_btn.append(customtkinter.CTkButton(left_side_panel, 
-                                                    padx        = 10,
-                                                    pady        = 20,
-                                                    text        = self.list_pages[i],
-                                                    hover_color = "red",
-                                                    command     = self.page_selector(self.list_pages[i])
-                                                    )
-                            )
-            list_btn[i].grid(row    = i, 
-                             column = 0
-                            )
+        ## Instanciate the different frames and generate the window selector
+        list_btn_selector = []
+        for i in range(len(self.dict_frames)):
+            self.dict_frames[self.list_frames[i]] = customtkinter.CTkFrame(fg_color="#1a1822")
+            list_btn_selector.append(customtkinter.CTkButton(
+                                                            left_side_panel, 
+                                                            padx        = 10,
+                                                            pady        = 20,
+                                                            text        = self.list_frames[i],
+                                                            hover_color = "red",
+                                                            command     = lambda frame_to_init=self.list_frames[i] : frame_selector(right_side_container, frame_to_init)))
+            list_btn_selector[i].pack()
+
+        ## Populate the different frames
+        home_page.populate_home_page(self.dict_frames[self.list_frames[INDEX_HOME]])
 
     def on_closing(self):
         """! Procedure to follow upon closing the App object
@@ -110,6 +133,3 @@ if __name__ == "__main__":
     """
     app_window = App("Zimmer Test Bench")
     app_window.mainloop()
-    
-
-
