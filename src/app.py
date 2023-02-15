@@ -11,6 +11,7 @@ import customtkinter
 
 import common
 import home_page
+import serial_funcs
 
 # Global constants
 ## The width and height of the App
@@ -47,7 +48,6 @@ class App(customtkinter.CTk):
     """! App class for the Zimmer Test Bench\n
     Defines the components to select different pages
     """
-
     ## All frames to be shown - The list purpose is to simplify index accessing
     list_frames = ["Home", "Programs", "Logs"]
     dict_frames = {"Home" : None, "Programs" : None, "Logs" : None}
@@ -110,7 +110,10 @@ class App(customtkinter.CTk):
         ## Instanciate the different frames and generate the window selector
         list_btn_selector = []
         for i in range(len(self.dict_frames)):
-            self.dict_frames[self.list_frames[i]] = customtkinter.CTkFrame(fg_color="#1a1822")
+            if (i == 0):
+                self.dict_frames[self.list_frames[i]] = home_page.HomePage()
+            else:
+                self.dict_frames[self.list_frames[i]] = customtkinter.CTkFrame(fg_color="#1a1822")
             list_btn_selector.append(customtkinter.CTkButton(
                                                             left_side_panel, 
                                                             padx        = 10,
@@ -119,9 +122,6 @@ class App(customtkinter.CTk):
                                                             hover_color = "red",
                                                             command     = lambda frame_to_init=self.list_frames[i] : frame_selector(right_side_container, frame_to_init)))
             list_btn_selector[i].pack()
-
-        ## Populate the different frames
-        home_page.populate_home_page(self.dict_frames[self.list_frames[INDEX_HOME]])
 
     def on_closing(self):
         """! Procedure to follow upon closing the App object
