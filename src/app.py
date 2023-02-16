@@ -8,6 +8,7 @@
 # Imports
 import tkinter
 import customtkinter
+import time
 
 import common
 import home_page
@@ -126,6 +127,7 @@ class App(customtkinter.CTk):
     def on_closing(self):
         """! Procedure to follow upon closing the App object
         """
+        home_page.g_stop_threads_event.set()
         self.destroy()
 
 if __name__ == "__main__":

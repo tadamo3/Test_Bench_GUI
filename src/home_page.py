@@ -12,8 +12,12 @@ import customtkinter
 import tkinter.messagebox
 from serial.tools import list_ports
 from threading import Thread
+from threading import Event
+import queue
 
 import serial_funcs
+import thread_funcs
+import time
 
 # Global constants
 ## The width and height of the home page
@@ -28,6 +32,10 @@ SLIDER_VERTICAL_SPEED_X = 20
 SLIDER_VERTICAL_SPEED_Y = 100
 SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX = 0
 
+## Global variables
+# Event variable is false by default
+g_stop_threads_event = Event()
+
 # Functions
 
 class HomePage(customtkinter.CTkFrame):
@@ -35,6 +43,16 @@ class HomePage(customtkinter.CTkFrame):
     Defines the components of the home page
     """
     list_slider_vertical_info = [0]
+    
+    def periodic_process_queue(self):
+        self.threaded_tasks.process_incoming_tasks()
+        self.after(100, self.periodic_process_queue)
+
+    def update_encoder_values(self, label_to_update):
+        while (g_stop_threads_event.is_set() != True):
+            msg = serial_funcs.receive_serial_data(serial_funcs.g_list_connected_device_info)
+            self.queue.put(msg)
+            time.sleep(0.1)
 
     def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
         """! Creates a combobox to list out all COM ports currently used by computer
@@ -90,7 +108,13 @@ class HomePage(customtkinter.CTkFrame):
     def __init__(self):
         super().__init__()
 
+        ## Stores the current selected COM port in the combobox
         strvar_current_com_port = customtkinter.StringVar(self)
+
+        ## Share a task queue with a ThreadedTask object and check it periodically
+        self.queue = queue.Queue()
+        self.threaded_tasks = thread_funcs.ThreadedTask(self.queue)
+        self.periodic_process_queue()
 
         ## Generate all comboboxes
         cbbox_com_ports = self.combobox_com_ports_generate(strvar_current_com_port)
@@ -118,5 +142,16 @@ class HomePage(customtkinter.CTkFrame):
         slider_vertical_speed.place(
                                     x = SLIDER_VERTICAL_SPEED_X,
                                     y = SLIDER_VERTICAL_SPEED_Y)
+
+        ## Generate all labels
+        label_encoder_1_value = customtkinter.CTkLabel(
+                                                        master = self,
+                                                        text = "asdf")
+        label_encoder_1_value.place(
+                                    x = SLIDER_VERTICAL_SPEED_X + 100,
+                                    y = SLIDER_VERTICAL_SPEED_Y + 100)
+        # Continous update of the first encoder's value
+        thread = Thread(target = self.update_encoder_values, args = (label_encoder_1_value, ))
+        thread.start()
 
         

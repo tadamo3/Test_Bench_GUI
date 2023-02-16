@@ -61,6 +61,6 @@ def receive_serial_data(list_com_device_info):
         rx_buffer = int.from_bytes(rx_buffer, endianness)
         print("RX received :", rx_buffer)
     else:
-        print("Could not receive data")
+        print("No data received, check COM port")
 
     return rx_buffer
