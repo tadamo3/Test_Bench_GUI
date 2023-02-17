@@ -13,11 +13,10 @@ import tkinter.messagebox
 from serial.tools import list_ports
 from threading import Thread
 from threading import Event
-import queue
 
 import serial_funcs
-import thread_funcs
 import time
+import app
 
 # Global constants
 ## The width and height of the home page
@@ -34,25 +33,28 @@ SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX = 0
 
 ## Global variables
 # Event variable is false by default
-g_stop_threads_event = Event()
+home_page_stop_threads_event = Event()
 
-# Functions
-
+# Classes
 class HomePage(customtkinter.CTkFrame):
     """! Home page class for the Zimmer Test Bench\n
-    Defines the components of the home page
+    Defines the components and callback functions of the home page
     """
     list_slider_vertical_info = [0]
     
     def periodic_process_queue(self):
-        self.threaded_tasks.process_incoming_tasks()
+        """! Calls the Home Page task processor every 100ms
+        """
+        self.home_page_thread_manager.process_incoming_tasks()
         self.after(100, self.periodic_process_queue)
 
-    def update_encoder_values(self, label_to_update):
-        while (g_stop_threads_event.is_set() != True):
+    def read_rx_buffer(self):
+        """! Inserts in the task queue the message sent by the STM32 over serial communication\n
+        Sleeps for 500ms to keep a reasonable update rate
+        """
+        while (home_page_stop_threads_event.is_set() != True):
             msg = serial_funcs.receive_serial_data(serial_funcs.g_list_connected_device_info)
-            self.queue.put(msg)
-            time.sleep(0.1)
+            time.sleep(0.5)
 
     def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
         """! Creates a combobox to list out all COM ports currently used by computer
@@ -91,6 +93,12 @@ class HomePage(customtkinter.CTkFrame):
         else:
             print("No COM port selected")
 
+    def btn_vertical_dir_click(self, direction, list_com_device_info):
+        serial_funcs.transmit_serial_data(
+                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
+                                            direction,
+                                            list_com_device_info)
+
     def slider_vertical_speed_callback(self, slider_value, list_slider_info, list_com_device_info):
         """! Every time a new value is set, sends the updated speed value to the device
         @param slider_value         The selected speed value for the vertical motor speed
@@ -102,19 +110,19 @@ class HomePage(customtkinter.CTkFrame):
             previous_slider_value = round(list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX])
 
             if (slider_value != previous_slider_value):
-                serial_funcs.send_new_vertical_speed(slider_value, list_com_device_info)
+                serial_funcs.transmit_serial_data(
+                                                    serial_funcs.ID_ENCODER_VERTICAL_LEFT,
+                                                    slider_value,
+                                                    list_com_device_info)
                 list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX] = slider_value
 
     def __init__(self):
+        """! Initialisation of a Home Page class
+        """
         super().__init__()
 
         ## Stores the current selected COM port in the combobox
         strvar_current_com_port = customtkinter.StringVar(self)
-
-        ## Share a task queue with a ThreadedTask object and check it periodically
-        self.queue = queue.Queue()
-        self.threaded_tasks = thread_funcs.ThreadedTask(self.queue)
-        self.periodic_process_queue()
 
         ## Generate all comboboxes
         cbbox_com_ports = self.combobox_com_ports_generate(strvar_current_com_port)
@@ -129,6 +137,36 @@ class HomePage(customtkinter.CTkFrame):
         btn_com_ports.place(
                             x = (CBBOX_COM_PORTS_X * 12),
                             y = CBBOX_COM_PORTS_Y)
+
+        btn_vertical_dir_up = customtkinter.CTkButton(
+                                                        master = self,
+                                                        text = "Go up!",
+                                                        command = lambda : self.btn_vertical_dir_click(
+                                                                                                            serial_funcs.COMMAND_MOTOR_VERTICAL_UP,
+                                                                                                            serial_funcs.g_list_connected_device_info))
+        btn_vertical_dir_up.place(
+                                    x = (CBBOX_COM_PORTS_X * 20),
+                                    y = CBBOX_COM_PORTS_Y)
+        
+        btn_vertical_dir_down = customtkinter.CTkButton(
+                                                        master = self,
+                                                        text = "Go Down!",
+                                                        command = lambda : self.btn_vertical_dir_click(
+                                                                                                            serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN,
+                                                                                                            serial_funcs.g_list_connected_device_info))
+        btn_vertical_dir_down.place(
+                                    x = (CBBOX_COM_PORTS_X * 28),
+                                    y = CBBOX_COM_PORTS_Y)
+
+        btn_vertical_dir_up = customtkinter.CTkButton(
+                                                        master = self,
+                                                        text = "Stop",
+                                                        command = lambda : self.btn_vertical_dir_click(
+                                                                                                            serial_funcs.COMMAND_MOTOR_VERTICAL_STOP,
+                                                                                                            serial_funcs.g_list_connected_device_info))
+        btn_vertical_dir_up.place(
+                                    x = (CBBOX_COM_PORTS_X * 20),
+                                    y = CBBOX_COM_PORTS_Y + 100)
         
         ## Generate all sliders
         slider_vertical_speed = customtkinter.CTkSlider(
@@ -136,7 +174,8 @@ class HomePage(customtkinter.CTkFrame):
                                                         from_           = 0,
                                                         to              = 100,
                                                         number_of_steps = 100)
-        slider_vertical_speed.command = lambda slider_value = slider_vertical_speed.get() : self.slider_vertical_speed_callback(slider_value,
+        slider_vertical_speed.command = lambda slider_value = slider_vertical_speed.get() : self.slider_vertical_speed_callback(
+                                                                                                                                slider_value,
                                                                                                                                 self.list_slider_vertical_info,
                                                                                                                                 serial_funcs.g_list_connected_device_info)
         slider_vertical_speed.place(
@@ -145,13 +184,14 @@ class HomePage(customtkinter.CTkFrame):
 
         ## Generate all labels
         label_encoder_1_value = customtkinter.CTkLabel(
-                                                        master = self,
-                                                        text = "asdf")
+                                                        master          = self,
+                                                        text            = "Encoder 1 value goes here",
+                                                        corner_radius   = 8)
         label_encoder_1_value.place(
                                     x = SLIDER_VERTICAL_SPEED_X + 100,
                                     y = SLIDER_VERTICAL_SPEED_Y + 100)
-        # Continous update of the first encoder's value
-        thread = Thread(target = self.update_encoder_values, args = (label_encoder_1_value, ))
-        thread.start()
 
-        
+        ## Start thread to read data rx buffer
+        # Continous read of the serial communication RX data
+        thread_rx_data = Thread(target = self.read_rx_buffer)
+        thread_rx_data.start()
