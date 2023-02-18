@@ -13,23 +13,28 @@ import tkinter.messagebox
 from serial.tools import list_ports
 from threading import Thread
 from threading import Event
+import time
 
 import serial_funcs
-import time
-import app
 
 # Global constants
 ## The width and height of the home page
-HOME_PAGE_WIDTH = 780
-HOME_PAGE_HEIGHT = 520
+HOME_PAGE_WIDTH     = 780
+HOME_PAGE_HEIGHT    = 520
 
-CBBOX_COM_PORTS_X = 20
-CBBOX_COM_PORTS_Y = 20
-CBBOX_WIDTH = 175
+## Info about the combobox ports
+CBBOX_COM_PORTS_X   = 20
+CBBOX_COM_PORTS_Y   = 20
+CBBOX_WIDTH         = 175
 
-SLIDER_VERTICAL_SPEED_X = 20
-SLIDER_VERTICAL_SPEED_Y = 100
-SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX = 0
+## Info about the vertical speed slider
+SLIDER_VERTICAL_SPEED_X                 = 20
+SLIDER_VERTICAL_SPEED_Y                 = 100
+SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX  = 0
+
+ID_NONE         = 0
+COMMAND_NONE    = 0
+DATA_NONE       = 0
 
 ## Global variables
 # Event variable is false by default
@@ -53,7 +58,9 @@ class HomePage(customtkinter.CTkFrame):
         Sleeps for 500ms to keep a reasonable update rate
         """
         while (home_page_stop_threads_event.is_set() != True):
-            msg = serial_funcs.receive_serial_data(serial_funcs.g_list_connected_device_info)
+            serial_funcs.receive_serial_data(
+                                                serial_funcs.g_list_message_info,
+                                                serial_funcs.g_list_connected_device_info)
             time.sleep(0.5)
 
     def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
@@ -93,10 +100,11 @@ class HomePage(customtkinter.CTkFrame):
         else:
             print("No COM port selected")
 
-    def btn_vertical_dir_click(self, direction, list_com_device_info):
+    def btn_vertical_dir_click(self, command, data, list_com_device_info):
         serial_funcs.transmit_serial_data(
                                             serial_funcs.ID_MOTOR_VERTICAL_LEFT,
-                                            direction,
+                                            command,
+                                            data,
                                             list_com_device_info)
 
     def slider_vertical_speed_callback(self, slider_value, list_slider_info, list_com_device_info):
@@ -112,6 +120,7 @@ class HomePage(customtkinter.CTkFrame):
             if (slider_value != previous_slider_value):
                 serial_funcs.transmit_serial_data(
                                                     serial_funcs.ID_ENCODER_VERTICAL_LEFT,
+                                                    COMMAND_NONE,
                                                     slider_value,
                                                     list_com_device_info)
                 list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX] = slider_value
@@ -143,6 +152,7 @@ class HomePage(customtkinter.CTkFrame):
                                                         text = "Go up!",
                                                         command = lambda : self.btn_vertical_dir_click(
                                                                                                             serial_funcs.COMMAND_MOTOR_VERTICAL_UP,
+                                                                                                            DATA_NONE,
                                                                                                             serial_funcs.g_list_connected_device_info))
         btn_vertical_dir_up.place(
                                     x = (CBBOX_COM_PORTS_X * 20),
@@ -153,6 +163,7 @@ class HomePage(customtkinter.CTkFrame):
                                                         text = "Go Down!",
                                                         command = lambda : self.btn_vertical_dir_click(
                                                                                                             serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN,
+                                                                                                            DATA_NONE,
                                                                                                             serial_funcs.g_list_connected_device_info))
         btn_vertical_dir_down.place(
                                     x = (CBBOX_COM_PORTS_X * 28),
@@ -163,6 +174,7 @@ class HomePage(customtkinter.CTkFrame):
                                                         text = "Stop",
                                                         command = lambda : self.btn_vertical_dir_click(
                                                                                                             serial_funcs.COMMAND_MOTOR_VERTICAL_STOP,
+                                                                                                            DATA_NONE,
                                                                                                             serial_funcs.g_list_connected_device_info))
         btn_vertical_dir_up.place(
                                     x = (CBBOX_COM_PORTS_X * 20),
