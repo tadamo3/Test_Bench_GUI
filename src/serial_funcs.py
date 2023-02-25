@@ -24,10 +24,18 @@ ID_MOTOR_VERTICAL_RIGHT     = 5
 ID_MOTOR_HORIZONTAL         = 6
 
 ## Commands of Test Bench comoponents - Must be the same as the ones found in Serial_Communication/serial_com.h
-COMMAND_RESERVED                = 0
-COMMAND_MOTOR_VERTICAL_UP       = 1
-COMMAND_MOTOR_VERTICAL_DOWN     = 2
-COMMAND_MOTOR_VERTICAL_STOP     = 3
+COMMAND_RESERVED                    = 0
+COMMAND_MOTOR_VERTICAL_UP           = 1
+COMMAND_MOTOR_VERTICAL_DOWN         = 2
+COMMAND_MOTOR_VERTICAL_STOP         = 3
+COMMAND_MOTOR_HORIZONTAL_RIGHT      = 4
+COMMAND_MOTOR_HORIZONTAL_LEFT       = 5
+COMMAND_MOTOR_CHANGE_SPEED          = 6
+COMMAND_READ_ENCODER_VERTICAL_LEFT  = 7
+COMMAND_READ_ENCODER_VERTICAL_RIGHT = 8
+COMMAND_READ_ENCODER_HORIZONTAL     = 9
+COMMAND_ENABLE_MANUAL_MODE          = 10
+COMMAND_ENABLE_AUTOMATIC_MODE       = 11
 
 ## Masks to retrieve information from the data received
 MASK_ID         = 0xFF000000
@@ -69,7 +77,7 @@ def connect_to_port(selected_com_port):
 
             return stm_32
         except:
-            print("No connection found")
+            #print("No connection found")
             
             return None
 
@@ -88,12 +96,13 @@ def receive_serial_data(list_message_info, list_com_device_info):
         list_message_info[INDEX_ID]         = (rx_buffer & MASK_ID) >> 24
         list_message_info[INDEX_COMMAND]    = (rx_buffer & MASK_COMMAND) >> 16
         list_message_info[INDEX_DATA]       = (rx_buffer & MASK_DATA)
-
-        print("Component ID: ", list_message_info[INDEX_ID])
-        print("Command: ", list_message_info[INDEX_COMMAND])
-        print("Data: ", list_message_info[INDEX_DATA])
-    else:
-        print("No data received, check COM port")
+        
+        print(
+                "Component ID: " + str(list_message_info[INDEX_ID]) + 
+                "Command: " + str(list_message_info[INDEX_ID]) + 
+                "Data: " + str(list_message_info[INDEX_DATA]))
+    #else:
+        #print("No data received, check COM port")
 
 def transmit_serial_data(id, command, data, list_com_device_info):
     """! Builds the desired message to transmit and writes it to the microcontroler
@@ -102,7 +111,7 @@ def transmit_serial_data(id, command, data, list_com_device_info):
     @param data     The data to transmit to the component
     """
     if (list_com_device_info[0] != 0):
-        # Create message with appropriate positioning of data and component id
+        # Create message with appropriate positioning of bytes
         message_to_send = data + (command << 16) + (id << 24)
 
         bytes_to_send = message_to_send.to_bytes(NUM_BYTES_TO_SEND, ENDIANNESS)

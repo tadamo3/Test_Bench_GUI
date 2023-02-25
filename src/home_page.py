@@ -46,12 +46,6 @@ class HomePage(customtkinter.CTkFrame):
     Defines the components and callback functions of the home page
     """
     list_slider_vertical_info = [0]
-    
-    def periodic_process_queue(self):
-        """! Calls the Home Page task processor every 100ms
-        """
-        self.home_page_thread_manager.process_incoming_tasks()
-        self.after(100, self.periodic_process_queue)
 
     def read_rx_buffer(self):
         """! Inserts in the task queue the message sent by the STM32 over serial communication\n
@@ -61,7 +55,7 @@ class HomePage(customtkinter.CTkFrame):
             serial_funcs.receive_serial_data(
                                                 serial_funcs.g_list_message_info,
                                                 serial_funcs.g_list_connected_device_info)
-            time.sleep(0.5)
+            time.sleep(0.01)
 
     def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
         """! Creates a combobox to list out all COM ports currently used by computer
@@ -100,7 +94,7 @@ class HomePage(customtkinter.CTkFrame):
         else:
             print("No COM port selected")
 
-    def btn_vertical_dir_click(self, command, data, list_com_device_info):
+    def btn_vertical_dir_click(self, current_button, command, data, list_com_device_info):
         serial_funcs.transmit_serial_data(
                                             serial_funcs.ID_MOTOR_VERTICAL_LEFT,
                                             command,
@@ -119,16 +113,19 @@ class HomePage(customtkinter.CTkFrame):
 
             if (slider_value != previous_slider_value):
                 serial_funcs.transmit_serial_data(
-                                                    serial_funcs.ID_ENCODER_VERTICAL_LEFT,
-                                                    COMMAND_NONE,
+                                                    serial_funcs.ID_MOTOR_VERTICAL_LEFT,
+                                                    serial_funcs.COMMAND_MOTOR_CHANGE_SPEED,
                                                     slider_value,
                                                     list_com_device_info)
                 list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX] = slider_value
 
-    def __init__(self):
+    def bind_click(self):
+        print("Hello")
+
+    def __init__(self, master):
         """! Initialisation of a Home Page class
         """
-        super().__init__()
+        super().__init__(master)
 
         ## Stores the current selected COM port in the combobox
         strvar_current_com_port = customtkinter.StringVar(self)
@@ -151,9 +148,10 @@ class HomePage(customtkinter.CTkFrame):
                                                         master = self,
                                                         text = "Go up!",
                                                         command = lambda : self.btn_vertical_dir_click(
-                                                                                                            serial_funcs.COMMAND_MOTOR_VERTICAL_UP,
-                                                                                                            DATA_NONE,
-                                                                                                            serial_funcs.g_list_connected_device_info))
+                                                                                                        btn_vertical_dir_up,
+                                                                                                        serial_funcs.COMMAND_MOTOR_VERTICAL_UP,
+                                                                                                        DATA_NONE,
+                                                                                                        serial_funcs.g_list_connected_device_info))
         btn_vertical_dir_up.place(
                                     x = (CBBOX_COM_PORTS_X * 20),
                                     y = CBBOX_COM_PORTS_Y)
@@ -162,23 +160,13 @@ class HomePage(customtkinter.CTkFrame):
                                                         master = self,
                                                         text = "Go Down!",
                                                         command = lambda : self.btn_vertical_dir_click(
-                                                                                                            serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN,
-                                                                                                            DATA_NONE,
-                                                                                                            serial_funcs.g_list_connected_device_info))
+                                                                                                        btn_vertical_dir_down,
+                                                                                                        serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN,
+                                                                                                        DATA_NONE,
+                                                                                                        serial_funcs.g_list_connected_device_info))
         btn_vertical_dir_down.place(
                                     x = (CBBOX_COM_PORTS_X * 28),
                                     y = CBBOX_COM_PORTS_Y)
-
-        btn_vertical_dir_up = customtkinter.CTkButton(
-                                                        master = self,
-                                                        text = "Stop",
-                                                        command = lambda : self.btn_vertical_dir_click(
-                                                                                                            serial_funcs.COMMAND_MOTOR_VERTICAL_STOP,
-                                                                                                            DATA_NONE,
-                                                                                                            serial_funcs.g_list_connected_device_info))
-        btn_vertical_dir_up.place(
-                                    x = (CBBOX_COM_PORTS_X * 20),
-                                    y = CBBOX_COM_PORTS_Y + 100)
         
         ## Generate all sliders
         slider_vertical_speed = customtkinter.CTkSlider(
@@ -186,10 +174,10 @@ class HomePage(customtkinter.CTkFrame):
                                                         from_           = 0,
                                                         to              = 100,
                                                         number_of_steps = 100)
-        slider_vertical_speed.command = lambda slider_value = slider_vertical_speed.get() : self.slider_vertical_speed_callback(
+        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_vertical_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_vertical_info,
-                                                                                                                                serial_funcs.g_list_connected_device_info)
+                                                                                                                                serial_funcs.g_list_connected_device_info))
         slider_vertical_speed.place(
                                     x = SLIDER_VERTICAL_SPEED_X,
                                     y = SLIDER_VERTICAL_SPEED_Y)

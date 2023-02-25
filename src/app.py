@@ -107,21 +107,21 @@ class App(customtkinter.CTk):
                                 pady    = 0)
 
         ## Instanciate the different frames
-        self.dict_frames[self.list_frames[INDEX_HOME]]      = home_page.HomePage()
-        self.dict_frames[self.list_frames[INDEX_PROGRAMS]]  = customtkinter.CTkFrame(fg_color="#1a1822")
-        self.dict_frames[self.list_frames[INDEX_LOGS]]      = customtkinter.CTkFrame(fg_color="#1a1822")
+        self.dict_frames[self.list_frames[INDEX_HOME]]      = home_page.HomePage(master = self)
+        self.dict_frames[self.list_frames[INDEX_PROGRAMS]]  = customtkinter.CTkFrame(master = self, fg_color="#1a1822")
+        self.dict_frames[self.list_frames[INDEX_LOGS]]      = customtkinter.CTkFrame(master = self, fg_color="#1a1822")
 
         ## Instanciate the frame selector buttons and associate them with each frame
         list_btn_selector = []
         for i in range(len(self.dict_frames)):
             list_btn_selector.append(customtkinter.CTkButton(
-                                                            left_side_panel, 
-                                                            padx        = 10,
-                                                            pady        = 20,
+                                                            left_side_panel,
                                                             text        = self.list_frames[i],
                                                             hover_color = "red",
                                                             command     = lambda frame_to_init=self.list_frames[i] : frame_selector(right_side_container, frame_to_init)))
-            list_btn_selector[i].pack()
+            list_btn_selector[i].place(
+                                        x = 5,
+                                        y = i * 50)
 
     def on_closing(self):
         """! Procedure on window closing to kill all remaining threads
