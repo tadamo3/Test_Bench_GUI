@@ -41,6 +41,14 @@ def key_pressed(event):
                                             serial_funcs.DATA_NONE,
                                             serial_funcs.g_list_connected_device_info)
 
+def key_released(event):
+    print("Stop")
+    serial_funcs.transmit_serial_data(
+                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
+                                            serial_funcs.COMMAND_MOTOR_VERTICAL_STOP,
+                                            serial_funcs.DATA_NONE,
+                                            serial_funcs.g_list_connected_device_info)
+
 def frame_selector(frame_to_init):
     """! Puts a new frame on top of the current frame and binds related keys to the frame's functionnalities
     @param frame_to_init    Frame to initialize and put on top of others
@@ -54,6 +62,7 @@ def frame_selector(frame_to_init):
     func_id = None
     if (frame_to_init == 'Home'):
         func_id = app_window.bind('<KeyPress>', key_pressed)
+        app_window.bind('<KeyRelease>', key_released)
     else:
         app_window.unbind('<KeyPress>', func_id)
 
