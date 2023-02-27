@@ -7,9 +7,7 @@
 # All its components and callback functions will be defined here.
 
 # Imports
-import tkinter
 import customtkinter
-import tkinter.messagebox
 from serial.tools import list_ports
 from threading import Thread
 from threading import Event
@@ -41,7 +39,7 @@ DATA_NONE       = 0
 home_page_stop_threads_event = Event()
 
 # Classes
-class HomePage(customtkinter.CTkFrame):
+class HomePageFrame(customtkinter.CTkFrame):
     """! Home page class for the Zimmer Test Bench\n
     Defines the components and callback functions of the home page
     """
@@ -119,13 +117,10 @@ class HomePage(customtkinter.CTkFrame):
                                                     list_com_device_info)
                 list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX] = slider_value
 
-    def bind_click(self):
-        print("Hello")
-
-    def __init__(self, master):
-        """! Initialisation of a Home Page class
+    def __init__(self, master, **kwargs):
+        """! Initialisation of a Home Page Frame
         """
-        super().__init__(master)
+        super().__init__(master, **kwargs)
 
         ## Stores the current selected COM port in the combobox
         strvar_current_com_port = customtkinter.StringVar(self)
@@ -143,30 +138,6 @@ class HomePage(customtkinter.CTkFrame):
         btn_com_ports.place(
                             x = (CBBOX_COM_PORTS_X * 12),
                             y = CBBOX_COM_PORTS_Y)
-
-        btn_vertical_dir_up = customtkinter.CTkButton(
-                                                        master = self,
-                                                        text = "Go up!",
-                                                        command = lambda : self.btn_vertical_dir_click(
-                                                                                                        btn_vertical_dir_up,
-                                                                                                        serial_funcs.COMMAND_MOTOR_VERTICAL_UP,
-                                                                                                        DATA_NONE,
-                                                                                                        serial_funcs.g_list_connected_device_info))
-        btn_vertical_dir_up.place(
-                                    x = (CBBOX_COM_PORTS_X * 20),
-                                    y = CBBOX_COM_PORTS_Y)
-        
-        btn_vertical_dir_down = customtkinter.CTkButton(
-                                                        master = self,
-                                                        text = "Go Down!",
-                                                        command = lambda : self.btn_vertical_dir_click(
-                                                                                                        btn_vertical_dir_down,
-                                                                                                        serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN,
-                                                                                                        DATA_NONE,
-                                                                                                        serial_funcs.g_list_connected_device_info))
-        btn_vertical_dir_down.place(
-                                    x = (CBBOX_COM_PORTS_X * 28),
-                                    y = CBBOX_COM_PORTS_Y)
         
         ## Generate all sliders
         slider_vertical_speed = customtkinter.CTkSlider(

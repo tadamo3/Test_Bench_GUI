@@ -37,6 +37,8 @@ COMMAND_READ_ENCODER_HORIZONTAL     = 9
 COMMAND_ENABLE_MANUAL_MODE          = 10
 COMMAND_ENABLE_AUTOMATIC_MODE       = 11
 
+DATA_NONE = 0
+
 ## Masks to retrieve information from the data received
 MASK_ID         = 0xFF000000
 MASK_COMMAND    = 0x00FF0000

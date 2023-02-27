@@ -11,6 +11,7 @@ import customtkinter
 
 import common
 import home_page
+import serial_funcs
 
 # Global constants
 ## The width and height of the App
@@ -23,24 +24,47 @@ INDEX_PROGRAMS = 1
 INDEX_LOGS = 2
 
 # Functions
-def frame_selector(position, frame_to_init):
-        """! Puts a new frame on top of the current frame.
-        @param position         Desired location of the frame
-        @param frame_to_init    Frame to initialize and put on top of others
-        """
-        # Clear out every possible frame that is not the frame to initialize
-        for i in range(len(App.dict_frames)):
-            if (App.list_frames[i] != frame_to_init):
-                    App.dict_frames[App.list_frames[i]].pack_forget()
-        
-        # Initialize the correct frame
-        App.dict_frames[frame_to_init].pack(
-                                            in_         = position, 
-                                            side        = tkinter.TOP, 
-                                            fill        = tkinter.BOTH, 
-                                            expand      = True, 
-                                            padx        = 0, 
-                                            pady        = 0)
+def key_pressed(event):
+    if (event.char and event.char in 'wads'):
+        if event.char == 'w':
+            print("Up")
+            serial_funcs.transmit_serial_data(
+                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
+                                            serial_funcs.COMMAND_MOTOR_VERTICAL_UP,
+                                            serial_funcs.DATA_NONE,
+                                            serial_funcs.g_list_connected_device_info)
+        elif event.keysym == 's':
+            print("Down")
+            serial_funcs.transmit_serial_data(
+                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
+                                            serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN,
+                                            serial_funcs.DATA_NONE,
+                                            serial_funcs.g_list_connected_device_info)
+
+def frame_selector(frame_to_init):
+    """! Puts a new frame on top of the current frame and binds related keys to the frame's functionnalities
+    @param frame_to_init    Frame to initialize and put on top of others
+    """
+    # Clear out every possible frame that is not the frame to initialize
+    for i in range(len(App.dict_frames)):
+        if (App.list_frames[i] != frame_to_init):
+                App.dict_frames[App.list_frames[i]].pack_forget()
+
+    # Bind / Unbind buttons related to the frames
+    func_id = None
+    if (frame_to_init == 'Home'):
+        func_id = app_window.bind('<KeyPress>', key_pressed)
+    else:
+        app_window.unbind('<KeyPress>', func_id)
+
+    # Initialize the correct frame
+    App.dict_frames[frame_to_init].pack(
+                                        in_         = app_window, 
+                                        side        = tkinter.TOP, 
+                                        fill        = tkinter.BOTH,
+                                        expand      = True, 
+                                        padx        = 10, 
+                                        pady        = 10)
 
 # Classes
 class App(customtkinter.CTk):
@@ -71,43 +95,17 @@ class App(customtkinter.CTk):
         ## Closing procedure for App window
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        ## Generate main container to contain all frames
-        main_container = customtkinter.CTkFrame(self)
-        main_container.pack(
-                            fill    = tkinter.BOTH,
-                            expand  = True,
-                            padx    = 10,
-                            pady    = 10)
-
         ## Left side panel creation for frame selection
-        left_side_panel = customtkinter.CTkFrame(main_container, width=150)
-        left_side_panel.pack(
-                            side    = tkinter.LEFT,
-                            fill    = tkinter.Y,
-                            expand  = False,
-                            padx    = 10,
-                            pady    = 10)
-
-        ## Right side panel to show all different frames
-        right_side_panel = customtkinter.CTkFrame(main_container)
-        right_side_panel.pack(
-                            side    = tkinter.LEFT,
-                            fill    = tkinter.BOTH,
-                            expand  = True, 
-                            padx    = 0,
-                            pady    = 0)
-
-        ## Right side container to contain the right panel
-        right_side_container = customtkinter.CTkFrame(right_side_panel)
-        right_side_container.pack(
-                                side    = tkinter.LEFT,
-                                fill    = tkinter.BOTH,
-                                expand  = True,
-                                padx    = 0,
-                                pady    = 0)
+        left_side_container = customtkinter.CTkFrame(self, width=150)
+        left_side_container.pack(
+                                    side    = tkinter.LEFT,
+                                    fill    = tkinter.Y,
+                                    expand  = False,
+                                    padx    = 10,
+                                    pady    = 10)
 
         ## Instanciate the different frames
-        self.dict_frames[self.list_frames[INDEX_HOME]]      = home_page.HomePage(master = self)
+        self.dict_frames[self.list_frames[INDEX_HOME]]      = home_page.HomePageFrame(master = self, fg_color="#1a1822")
         self.dict_frames[self.list_frames[INDEX_PROGRAMS]]  = customtkinter.CTkFrame(master = self, fg_color="#1a1822")
         self.dict_frames[self.list_frames[INDEX_LOGS]]      = customtkinter.CTkFrame(master = self, fg_color="#1a1822")
 
@@ -115,10 +113,10 @@ class App(customtkinter.CTk):
         list_btn_selector = []
         for i in range(len(self.dict_frames)):
             list_btn_selector.append(customtkinter.CTkButton(
-                                                            left_side_panel,
+                                                            left_side_container,
                                                             text        = self.list_frames[i],
                                                             hover_color = "red",
-                                                            command     = lambda frame_to_init=self.list_frames[i] : frame_selector(right_side_container, frame_to_init)))
+                                                            command     = lambda frame_to_init=self.list_frames[i] : frame_selector(frame_to_init)))
             list_btn_selector[i].place(
                                         x = 5,
                                         y = i * 50)
