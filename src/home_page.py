@@ -27,8 +27,20 @@ CBBOX_WIDTH         = 175
 
 ## Info about the vertical speed slider
 SLIDER_VERTICAL_SPEED_X                 = 20
-SLIDER_VERTICAL_SPEED_Y                 = 100
+SLIDER_VERTICAL_SPEED_Y                 = 500
 SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX  = 0
+SLIDER_VERTICAL_SPEED_RANGE_MAX         = 100
+
+SLIDER_HORIZONTAL_SPEED_X                   = 20
+SLIDER_HORIZONTAL_SPEED_Y                   = 575
+SLIDER_HORIZONTAL_SPEED_PREV_VALUE_INDEX    = 0
+SLIDER_HORIZONTAL_SPEED_RANGE_MAX           = 100
+
+LABEL_ENCODER_1_VALUE_X = 500
+LABEL_ENCODER_1_VALUE_Y = 100
+
+BUTTON_DIRECTION_CENTER_X = 400
+BUTTON_DIRECTION_CENTER_Y = 550
 
 ID_NONE         = 0
 COMMAND_NONE    = 0
@@ -44,6 +56,7 @@ class HomePageFrame(customtkinter.CTkFrame):
     Defines the components and callback functions of the home page
     """
     list_slider_vertical_info = [0]
+    list_slider_horizontal_info = [0]
 
     def read_rx_buffer(self):
         """! Inserts in the task queue the message sent by the STM32 over serial communication\n
@@ -81,6 +94,17 @@ class HomePageFrame(customtkinter.CTkFrame):
 
         return combobox
 
+    def button_generate(self, button_pos_x, button_pos_y, text):
+        button = customtkinter.CTkButton(
+                                            master = self,
+                                            text = text)
+        
+        button.place(
+                        x = button_pos_x,
+                        y = button_pos_y)
+
+        return button
+
     def button_com_ports_click(self, combobox_com_port, list_com_device_info):
         """! On click, prints out the current value of the COM ports combobox
         @param combobox_com_port    StringVar containing the current COM port selected
@@ -92,14 +116,19 @@ class HomePageFrame(customtkinter.CTkFrame):
         else:
             print("No COM port selected")
 
-    def btn_vertical_dir_click(self, current_button, command, data, list_com_device_info):
-        serial_funcs.transmit_serial_data(
-                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
-                                            command,
-                                            data,
-                                            list_com_device_info)
+    def slider_generate(self, slider_pos_x, slider_pos_y, range):
+        slider = customtkinter.CTkSlider(
+                                            master          = self,
+                                            from_           = 0,
+                                            to              = range,
+                                            number_of_steps = range)
+        slider.place(
+                        x = slider_pos_x,
+                        y = slider_pos_y)
 
-    def slider_vertical_speed_callback(self, slider_value, list_slider_info, list_com_device_info):
+        return slider
+
+    def slider_speed_callback(self, slider_value, list_slider_info, list_com_device_info):
         """! Every time a new value is set, sends the updated speed value to the device
         @param slider_value         The selected speed value for the vertical motor speed
         @param list_slider_info     Notable information for a specific slider
@@ -117,6 +146,18 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                     list_com_device_info)
                 list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX] = slider_value
 
+    def label_generate(self, label_pos_x, label_pos_y, text):
+        label = customtkinter.CTkLabel(
+                                        master          = self,
+                                        text            = text,
+                                        corner_radius   = 8)
+        
+        label.place(
+                    x = label_pos_x,
+                    y = label_pos_y)
+
+        return label
+
     def __init__(self, master, **kwargs):
         """! Initialisation of a Home Page Frame
         """
@@ -129,38 +170,45 @@ class HomePageFrame(customtkinter.CTkFrame):
         cbbox_com_ports = self.combobox_com_ports_generate(strvar_current_com_port)
 
         ## Generate all buttons
-        btn_com_ports = customtkinter.CTkButton(
-                                                master = self,
-                                                text = "Connect",
-                                                command = lambda : self.button_com_ports_click(
-                                                                                                cbbox_com_ports.get(),
-                                                                                                serial_funcs.g_list_connected_device_info))
-        btn_com_ports.place(
-                            x = (CBBOX_COM_PORTS_X * 12),
-                            y = CBBOX_COM_PORTS_Y)
-        
+        btn_com_ports = self.button_generate((CBBOX_COM_PORTS_X * 12), CBBOX_COM_PORTS_Y, "Connect")
+        btn_com_ports.configure(command = lambda : self.button_com_ports_click(
+                                                                                cbbox_com_ports.get(),
+                                                                                serial_funcs.g_list_connected_device_info))
+
+        btn_direction_up    = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y + 100), "Going Up")
+        btn_direction_up.configure(state = "disabled")
+
+        btn_direction_down  = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y - 100), "Going Down")
+        btn_direction_down.configure(state = "disabled")
+
+        btn_direction_left  = self.button_generate((BUTTON_DIRECTION_CENTER_X - 100), BUTTON_DIRECTION_CENTER_Y, "Going Left")
+        btn_direction_left.configure(state = "disabled")
+
+        btn_direction_right = self.button_generate((BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
+        btn_direction_right.configure(state = "disabled")
+
         ## Generate all sliders
-        slider_vertical_speed = customtkinter.CTkSlider(
-                                                        master          = self,
-                                                        from_           = 0,
-                                                        to              = 100,
-                                                        number_of_steps = 100)
-        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_vertical_speed_callback(
+        slider_vertical_speed = self.slider_generate(SLIDER_VERTICAL_SPEED_X, SLIDER_VERTICAL_SPEED_Y, SLIDER_VERTICAL_SPEED_RANGE_MAX)
+        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_vertical_info,
                                                                                                                                 serial_funcs.g_list_connected_device_info))
-        slider_vertical_speed.place(
-                                    x = SLIDER_VERTICAL_SPEED_X,
-                                    y = SLIDER_VERTICAL_SPEED_Y)
+
+        slider_horizontal_speed = self.slider_generate(SLIDER_HORIZONTAL_SPEED_X, SLIDER_HORIZONTAL_SPEED_Y, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
+        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
+                                                                                                                                slider_value,
+                                                                                                                                self.list_slider_horizontal_info,
+                                                                                                                                serial_funcs.g_list_connected_device_info))
 
         ## Generate all labels
-        label_encoder_1_value = customtkinter.CTkLabel(
-                                                        master          = self,
-                                                        text            = "Encoder 1 value goes here",
-                                                        corner_radius   = 8)
-        label_encoder_1_value.place(
-                                    x = SLIDER_VERTICAL_SPEED_X + 100,
-                                    y = SLIDER_VERTICAL_SPEED_Y + 100)
+        label_encoder_1_value = self.label_generate(LABEL_ENCODER_1_VALUE_X, LABEL_ENCODER_1_VALUE_Y, "12345")
+        label_encoder_1_indication = self.label_generate((LABEL_ENCODER_1_VALUE_X - 200), LABEL_ENCODER_1_VALUE_Y, "Vertical Motor Position (mm): ")
+
+        label_encoder_2_value = self.label_generate(LABEL_ENCODER_1_VALUE_X, LABEL_ENCODER_1_VALUE_Y + 50, "12345")
+        label_encoder_1_indication = self.label_generate((LABEL_ENCODER_1_VALUE_X - 200), LABEL_ENCODER_1_VALUE_Y + 50, "Horizontal Motor Position (mm): ")
+
+        label_vertical_speed_slider = self.label_generate(SLIDER_VERTICAL_SPEED_X, SLIDER_VERTICAL_SPEED_Y - 30, "Vertical Speed (mm/s)")
+        label_horizontal_speed_slider = self.label_generate(SLIDER_HORIZONTAL_SPEED_X, SLIDER_HORIZONTAL_SPEED_Y - 30, "Horizontal speed (mm/s)")
 
         ## Start thread to read data rx buffer
         # Continous read of the serial communication RX data

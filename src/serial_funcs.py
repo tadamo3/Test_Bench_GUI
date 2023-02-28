@@ -103,8 +103,8 @@ def receive_serial_data(list_message_info, list_com_device_info):
                 "Component ID: " + str(list_message_info[INDEX_ID]) + 
                 "Command: " + str(list_message_info[INDEX_ID]) + 
                 "Data: " + str(list_message_info[INDEX_DATA]))
-    #else:
-        #print("No data received, check COM port")
+    else:
+        print("No data received, check COM port")
 
 def transmit_serial_data(id, command, data, list_com_device_info):
     """! Builds the desired message to transmit and writes it to the microcontroler

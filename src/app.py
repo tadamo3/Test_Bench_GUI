@@ -12,6 +12,7 @@ import customtkinter
 import common
 import home_page
 import serial_funcs
+import manual_control
 
 # Global constants
 ## The width and height of the App
@@ -24,31 +25,6 @@ INDEX_PROGRAMS = 1
 INDEX_LOGS = 2
 
 # Functions
-def key_pressed(event):
-    if (event.char and event.char in 'wads'):
-        if event.char == 'w':
-            print("Up")
-            serial_funcs.transmit_serial_data(
-                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
-                                            serial_funcs.COMMAND_MOTOR_VERTICAL_UP,
-                                            serial_funcs.DATA_NONE,
-                                            serial_funcs.g_list_connected_device_info)
-        elif event.keysym == 's':
-            print("Down")
-            serial_funcs.transmit_serial_data(
-                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
-                                            serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN,
-                                            serial_funcs.DATA_NONE,
-                                            serial_funcs.g_list_connected_device_info)
-
-def key_released(event):
-    print("Stop")
-    serial_funcs.transmit_serial_data(
-                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
-                                            serial_funcs.COMMAND_MOTOR_VERTICAL_STOP,
-                                            serial_funcs.DATA_NONE,
-                                            serial_funcs.g_list_connected_device_info)
-
 def frame_selector(frame_to_init):
     """! Puts a new frame on top of the current frame and binds related keys to the frame's functionnalities
     @param frame_to_init    Frame to initialize and put on top of others
@@ -61,8 +37,8 @@ def frame_selector(frame_to_init):
     # Bind / Unbind buttons related to the frames
     func_id = None
     if (frame_to_init == 'Home'):
-        func_id = app_window.bind('<KeyPress>', key_pressed)
-        app_window.bind('<KeyRelease>', key_released)
+        func_id = app_window.bind('<KeyPress>', manual_control.key_pressed)
+        app_window.bind('<KeyRelease>', manual_control.key_released)
     else:
         app_window.unbind('<KeyPress>', func_id)
 
