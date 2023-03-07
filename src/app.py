@@ -13,6 +13,7 @@ import common
 import home_page
 import serial_funcs
 import manual_control
+import programs_page
 
 # Global constants
 ## The width and height of the App
@@ -91,7 +92,7 @@ class App(customtkinter.CTk):
 
         ## Instanciate the different frames
         self.dict_frames[self.list_frames[INDEX_HOME]]      = home_page.HomePageFrame(master = self, fg_color="#1a1822")
-        self.dict_frames[self.list_frames[INDEX_PROGRAMS]]  = customtkinter.CTkFrame(master = self, fg_color="#1a1822")
+        self.dict_frames[self.list_frames[INDEX_PROGRAMS]]  = programs_page.ProgramsPageFrame(master = self, fg_color="#1a1822")
         self.dict_frames[self.list_frames[INDEX_LOGS]]      = customtkinter.CTkFrame(master = self, fg_color="#1a1822")
 
         ## Instanciate the frame selector buttons and associate them with each frame
