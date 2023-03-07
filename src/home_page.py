@@ -46,6 +46,9 @@ ID_NONE         = 0
 COMMAND_NONE    = 0
 DATA_NONE       = 0
 
+INDEX_LABEL_ENCODER_1 = 0
+INDEX_LABEL_ENCODER_2 = 1
+
 ## Global variables
 # Event variable is false by default
 home_page_stop_threads_event = Event()
@@ -58,7 +61,7 @@ class HomePageFrame(customtkinter.CTkFrame):
     list_slider_vertical_info = [0]
     list_slider_horizontal_info = [0]
 
-    def read_rx_buffer(self):
+    def read_rx_buffer(self,list_label):
         """! Inserts in the task queue the message sent by the STM32 over serial communication\n
         Sleeps for 500ms to keep a reasonable update rate
         """
@@ -67,6 +70,14 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                 serial_funcs.g_list_message_info,
                                                 serial_funcs.g_list_connected_device_info)
             time.sleep(0.01)
+
+            if (serial_funcs.g_list_message_info[serial_funcs.INDEX_ID] == serial_funcs.ID_ENCODER_VERTICAL_LEFT): 
+                list_label[INDEX_LABEL_ENCODER_1]._text = str(12345)
+            elif (serial_funcs.g_list_message_info[serial_funcs.INDEX_ID] == serial_funcs.ID_ENCODER_VERTICAL_RIGHT): 
+                list_label[INDEX_LABEL_ENCODER_1]._text = str(12345)
+            elif (serial_funcs.g_list_message_info[serial_funcs.INDEX_ID] == serial_funcs.ID_ENCODER_HORIZONTAL): 
+                list_label[INDEX_LABEL_ENCODER_2]._text = str(12345)  
+            
 
     def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
         """! Creates a combobox to list out all COM ports currently used by computer
@@ -210,7 +221,8 @@ class HomePageFrame(customtkinter.CTkFrame):
         label_vertical_speed_slider = self.label_generate(SLIDER_VERTICAL_SPEED_X, SLIDER_VERTICAL_SPEED_Y - 30, "Vertical Speed (mm/s)")
         label_horizontal_speed_slider = self.label_generate(SLIDER_HORIZONTAL_SPEED_X, SLIDER_HORIZONTAL_SPEED_Y - 30, "Horizontal speed (mm/s)")
 
+        list_label = [label_encoder_1_value, label_encoder_2_value]
         ## Start thread to read data rx buffer
         # Continous read of the serial communication RX data
-        thread_rx_data = Thread(target = self.read_rx_buffer)
+        thread_rx_data = Thread(target = self.read_rx_buffer, args = (list_label,))
         thread_rx_data.start()
