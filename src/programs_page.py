@@ -16,14 +16,19 @@ import serial_funcs
 
 # Global constants
 ## The width and height of the home page
-HOME_PAGE_WIDTH     = 100
-HOME_PAGE_HEIGHT    = 100
+HOME_PAGE_WIDTH     = 1000
+HOME_PAGE_HEIGHT    = 1000
 
-TITLE_VALUE_X       = 10
-TITLE_VALUE_Y       = 10
+TITLE_VALUE_X       = 50
+TITLE_VALUE_Y       = 50
 
-BUTTON_DIRECTION_CENTER_X = 20
-BUTTON_DIRECTION_CENTER_Y = 20
+BUTTON_DIRECTION_CENTER_X = 200
+BUTTON_DIRECTION_CENTER_Y = 275
+
+BUTTON_NEXT_X = 300
+BUTTON_NEXT_Y = 500
+
+
 
 ## Global variables
 # Event variable is false by default
@@ -95,7 +100,12 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         
 
         ## Generate all buttons
-        btn_direction = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y + 100), "Going Up")
+        btn_direction_up    = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y + 100), "Going Up")
+        btn_direction_down  = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y - 100), "Going Down")
+        btn_direction_left  = self.button_generate((BUTTON_DIRECTION_CENTER_X - 100), BUTTON_DIRECTION_CENTER_Y, "Going Left")
+        btn_direction_right = self.button_generate((BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
+
+        btn_next = self.button_generate(BUTTON_NEXT_X, BUTTON_NEXT_Y, "Next")
 
 
         ## Generate all sliders
