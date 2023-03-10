@@ -34,24 +34,29 @@ COMMAND_MOTOR_CHANGE_SPEED          = 6
 COMMAND_READ_ENCODER_VERTICAL_LEFT  = 7
 COMMAND_READ_ENCODER_VERTICAL_RIGHT = 8
 COMMAND_READ_ENCODER_HORIZONTAL     = 9
-COMMAND_ENABLE_MANUAL_MODE          = 10
-COMMAND_ENABLE_AUTOMATIC_MODE       = 11
 
-DATA_NONE = 0
+## Available modes
+MODE_RESERVED           = 0
+MODE_MANUAL_CONTROL     = 1
+MODE_POSITION_CONTROL   = 2
 
 ## Masks to retrieve information from the data received
 MASK_ID         = 0xFF000000
-MASK_COMMAND    = 0x00FF0000
+MASK_MODE       = 0x00C00000
+MASK_COMMAND    = 0x003F0000
 MASK_DATA       = 0x0000FFFF
 
 ## Indexes to access different parts of the message
 INDEX_ID        = 0
-INDEX_COMMAND   = 1
-INDEX_DATA      = 2
+INDEX_MODE      = 1
+INDEX_COMMAND   = 2
+INDEX_DATA      = 3
+
+DATA_NONE = 0
 
 # Global variables
 g_list_connected_device_info = [0]
-g_list_message_info = [0, 0, 0]
+g_list_message_info = [0, 0, 0, 0]
 
 # Functions
 def connect_to_port(selected_com_port):
@@ -96,29 +101,32 @@ def receive_serial_data(list_message_info, list_com_device_info):
         rx_buffer = int.from_bytes(rx_buffer, ENDIANNESS)
 
         list_message_info[INDEX_ID]         = (rx_buffer & MASK_ID) >> 24
+        list_message_info[INDEX_MODE]       = (rx_buffer & MASK_MODE) >> 22
         list_message_info[INDEX_COMMAND]    = (rx_buffer & MASK_COMMAND) >> 16
         list_message_info[INDEX_DATA]       = (rx_buffer & MASK_DATA)
         
         print(
                 "Component ID: " + str(list_message_info[INDEX_ID]) + 
-                "Command: " + str(list_message_info[INDEX_ID]) + 
+                "Mode: " + str(list_message_info[INDEX_MODE]) + 
+                "Command: " + str(list_message_info[INDEX_COMMAND]) + 
                 "Data: " + str(list_message_info[INDEX_DATA]))
-    else:
-        print("No data received, check COM port")
+                
 
-def transmit_serial_data(id, command, data, list_com_device_info):
+def transmit_serial_data(id, command, mode, data, list_com_device_info):
     """! Builds the desired message to transmit and writes it to the microcontroler
-    @param id       The ID of the component to write to
-    @param command  The command to write to the component
-    @param data     The data to transmit to the component
+    @param id               The ID of the component to write to
+    @param command          The command to write to the component
+    @param mode             The mode in which the test bench is functionning
+    @param data             The data to transmit to the component
+    @list_com_device_info   Notable information for all connected devices
     """
     if (list_com_device_info[0] != 0):
         # Create message with appropriate positioning of bytes
-        message_to_send = data + (command << 16) + (id << 24)
+        message_to_send = data + (command << 16) + (mode << 22) + (id << 24)
 
         bytes_to_send = message_to_send.to_bytes(NUM_BYTES_TO_SEND, ENDIANNESS)
         list_com_device_info[0].write(bytes_to_send)
 
-        print("Message sent: ", bytes_to_send)
+        print("Message sent: ", bytes_to_send.hex())
     else:
         print("Could not send data")
