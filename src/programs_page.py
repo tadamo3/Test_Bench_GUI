@@ -16,8 +16,8 @@ import serial_funcs
 
 # Global constants
 ## The width and height of the home page
-HOME_PAGE_WIDTH     = 1000
-HOME_PAGE_HEIGHT    = 1000
+HOME_PAGE_WIDTH     = 780
+HOME_PAGE_HEIGHT    = 520
 
 TITLE_VALUE_X       = 50
 TITLE_VALUE_Y       = 50
@@ -106,6 +106,19 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         btn_direction_right = self.button_generate((BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
 
         btn_next = self.button_generate(BUTTON_NEXT_X, BUTTON_NEXT_Y, "Next")
+
+
+        btn_direction_up2    = self.button_generate(BUTTON_DIRECTION_CENTER_X + 400, (BUTTON_DIRECTION_CENTER_Y + 100), "Going Up")
+        btn_direction_up2.configure(state = "disabled")
+
+        btn_direction_down2  = self.button_generate(BUTTON_DIRECTION_CENTER_X +400, (BUTTON_DIRECTION_CENTER_Y - 100), "Going Down")
+        btn_direction_down2.configure(state = "disabled")
+
+        btn_direction_left2  = self.button_generate((BUTTON_DIRECTION_CENTER_X + 300), BUTTON_DIRECTION_CENTER_Y, "Going Left")
+        btn_direction_left2.configure(state = "disabled")
+
+        btn_direction_right2 = self.button_generate((BUTTON_DIRECTION_CENTER_X + 500), BUTTON_DIRECTION_CENTER_Y, "Going Right")
+        btn_direction_right2.configure(state = "disabled")
 
 
         ## Generate all sliders
