@@ -17,8 +17,8 @@ import programs_page
 
 # Global constants
 ## The width and height of the App
-APP_WIDTH = 780
-APP_HEIGHT = 520
+APP_WIDTH = 1450
+APP_HEIGHT = 1500
 
 ## Indexes to access different pages
 INDEX_HOME = 0
@@ -76,7 +76,7 @@ class App(customtkinter.CTk):
 
         ## Shape and size of the App window
         self.state('zoomed')
-        self.geometry(f"{APP_WIDTH} x {APP_HEIGHT}")
+        self.geometry(f'{APP_WIDTH}x{APP_HEIGHT}') 
 
         ## Closing procedure for App window
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
