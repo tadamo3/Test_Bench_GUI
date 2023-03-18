@@ -35,6 +35,21 @@ COMMAND_READ_ENCODER_VERTICAL_LEFT  = 7
 COMMAND_READ_ENCODER_VERTICAL_RIGHT = 8
 COMMAND_READ_ENCODER_HORIZONTAL     = 9
 
+## Motor possible states
+MOTOR_STATE_RESERVED            = 0
+MOTOR_STATE_VERTICAL_UP         = 1
+MOTOR_STATE_VERTICAL_DOWN       = 2
+MOTOR_STATE_HORIZONTAL_RIGHT    = 3
+MOTOR_STATE_HORIZONTAL_LEFT     = 4
+MOTOR_STATE_VERTICAL_STOP       = 5
+MOTOR_STATE_HORIZONTAL_STOP     = 6
+MOTOR_STATE_AUTO_IN_TRAJ        = 7
+MOTOR_STATE_AUTO_END_OF_TRAJ    = 8
+
+## Motor possible faults
+MOTOR_FAULT_NONE         = 0
+MOTOR_FAULT_INVALID_ID   = 1
+
 ## Available modes
 MODE_RESERVED           = 0
 MODE_MANUAL_CONTROL     = 1
@@ -46,11 +61,17 @@ MASK_MODE       = 0x00C00000
 MASK_COMMAND    = 0x003F0000
 MASK_DATA       = 0x0000FFFF
 
-## Indexes to access different parts of the message
+## Indexes to access different parts of the message to transmit
 INDEX_ID        = 0
 INDEX_MODE      = 1
 INDEX_COMMAND   = 2
 INDEX_DATA      = 3
+
+## Indexes to access different parts of the message to transmit
+INDEX_ID                        = 0
+INDEX_STATUS_MOVEMENT_MOTOR     = 1
+INDEX_STATUS_MOTOR              = 2
+INDEX_MOTOR_POSITION            = 3
 
 DATA_NONE = 0
 
@@ -94,23 +115,25 @@ def receive_serial_data(list_message_info, list_com_device_info):
     @param list_message_info        Notable information for the received serial message
     @param list_com_device_info     Notable information for all connected devices
     """
-    rx_buffer = -1
+    rx_buffer = [0, 0]
 
     if (list_com_device_info[0] != 0):
-        rx_buffer = list_com_device_info[0].read(NUM_BYTES_TO_READ)
-        rx_buffer = int.from_bytes(rx_buffer, ENDIANNESS)
+        rx_buffer[0] = list_com_device_info[0].read(NUM_BYTES_TO_READ)
+        rx_buffer[1] = list_com_device_info[0].read(NUM_BYTES_TO_READ)
 
-        list_message_info[INDEX_ID]         = (rx_buffer & MASK_ID) >> 24
-        list_message_info[INDEX_MODE]       = (rx_buffer & MASK_MODE) >> 22
-        list_message_info[INDEX_COMMAND]    = (rx_buffer & MASK_COMMAND) >> 16
-        list_message_info[INDEX_DATA]       = (rx_buffer & MASK_DATA)
-        
+        rx_buffer[0] = int.from_bytes(rx_buffer[0], ENDIANNESS)
+        rx_buffer[1] = int.from_bytes(rx_buffer[1], ENDIANNESS)
+
+        list_message_info[INDEX_ID]                     = ((rx_buffer[0] & 0x00FF0000) >> 16)
+        list_message_info[INDEX_STATUS_MOVEMENT_MOTOR]  = ((rx_buffer[0] & 0x0000FF00) >> 8)
+        list_message_info[INDEX_STATUS_MOTOR]           = (rx_buffer[0] & 0x000000FF)
+        list_message_info[INDEX_MOTOR_POSITION]         = rx_buffer[1]
+
         print(
-                "Component ID: " + str(list_message_info[INDEX_ID]) + 
-                "Mode: " + str(list_message_info[INDEX_MODE]) + 
-                "Command: " + str(list_message_info[INDEX_COMMAND]) + 
-                "Data: " + str(list_message_info[INDEX_DATA]))
-                
+                "ID: "                  + str(list_message_info[INDEX_ID]) +
+                "Status movement: "     + str(list_message_info[INDEX_STATUS_MOVEMENT_MOTOR]) +
+                "Status motor: "        + str(list_message_info[INDEX_STATUS_MOTOR])
+            )
 
 def transmit_serial_data(id, command, mode, data, list_com_device_info):
     """! Builds the desired message to transmit and writes it to the microcontroler
@@ -127,6 +150,6 @@ def transmit_serial_data(id, command, mode, data, list_com_device_info):
         bytes_to_send = message_to_send.to_bytes(NUM_BYTES_TO_SEND, ENDIANNESS)
         list_com_device_info[0].write(bytes_to_send)
 
-        print("Message sent: ", bytes_to_send.hex())
+        #print("Message sent: ", bytes_to_send.hex())
     else:
         print("Could not send data")

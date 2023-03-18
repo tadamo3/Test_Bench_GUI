@@ -12,7 +12,6 @@ import home_page
 def key_pressed(event):
     if (event.char and event.char in 'wads'):
         if event.char == 'w':
-            print("Up")
             serial_funcs.transmit_serial_data(
                                             serial_funcs.ID_MOTOR_VERTICAL_LEFT,
                                             serial_funcs.COMMAND_MOTOR_VERTICAL_UP,
@@ -20,7 +19,6 @@ def key_pressed(event):
                                             serial_funcs.DATA_NONE,
                                             serial_funcs.g_list_connected_device_info)
         elif event.keysym == 's':
-            print("Down")
             serial_funcs.transmit_serial_data(
                                             serial_funcs.ID_MOTOR_VERTICAL_LEFT,
                                             serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN,
@@ -29,7 +27,6 @@ def key_pressed(event):
                                             serial_funcs.g_list_connected_device_info)
         
         elif event.keysym == 'a':
-            print("Left")
             serial_funcs.transmit_serial_data(
                                             serial_funcs.ID_MOTOR_HORIZONTAL,
                                             serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT,
@@ -38,7 +35,6 @@ def key_pressed(event):
                                             serial_funcs.g_list_connected_device_info)
 
         elif event.keysym == 'd':
-            print("Right")
             serial_funcs.transmit_serial_data(
                                             serial_funcs.ID_MOTOR_HORIZONTAL,
                                             serial_funcs.COMMAND_MOTOR_HORIZONTAL_RIGHT,

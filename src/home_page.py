@@ -68,6 +68,8 @@ INDEX_AUTOMATIC_MODE = 2
 
 MAX_HORIZONTAL = 30 # max value we can travel to on the horizontal axis ## CHANGE TO REAL VALUE 
 MAX_VERTICAL = 30 # max value we can travel to on the vertical axis ## CHANGE TO REAL VALUE 
+CHECKPOINT_A = 0
+CHECKPOINT_B = 1
 
 ## Global variables
 # Event variable is false by default
@@ -80,6 +82,8 @@ class HomePageFrame(customtkinter.CTkFrame):
     """
     list_slider_vertical_info = [0]
     list_slider_horizontal_info = [0]
+    list_positions_to_reach = [50, 100]
+    current_checkpoint_to_reach = 0
 
     def read_rx_buffer(self, list_labels):
         """! Inserts in the task queue the message sent by the STM32 over serial communication\n
@@ -95,14 +99,44 @@ class HomePageFrame(customtkinter.CTkFrame):
 
             time.sleep(0.01)
 
+    def auto_mode(self):
+        serial_funcs.transmit_serial_data(
+                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
+                                            serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT,
+                                            serial_funcs.MODE_POSITION_CONTROL,
+                                            self.list_positions_to_reach[0],
+                                            serial_funcs.g_list_connected_device_info)
+        while (home_page_stop_threads_event.is_set() != True):
+            if ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOVEMENT_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 1)):
+                time.sleep(1)
+                serial_funcs.transmit_serial_data(
+                                                    serial_funcs.ID_MOTOR_VERTICAL_LEFT,
+                                                    serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT,
+                                                    serial_funcs.MODE_POSITION_CONTROL,
+                                                    self.list_positions_to_reach[0],
+                                                    serial_funcs.g_list_connected_device_info)
+                self.current_checkpoint_to_reach = 0
+            elif ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOVEMENT_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 0)):
+                time.sleep(1)
+                serial_funcs.transmit_serial_data(
+                                                    serial_funcs.ID_MOTOR_VERTICAL_LEFT,
+                                                    serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT,
+                                                    serial_funcs.MODE_POSITION_CONTROL,
+                                                    self.list_positions_to_reach[1],
+                                                    serial_funcs.g_list_connected_device_info)
+                self.current_checkpoint_to_reach = 1
+
+            time.sleep(0.1)
+
+
     def update_labels_encoders(self, list_labels):
         """! Updates Home Page frame labels according to the information received from the STM32 feedback
         @param list_labels      List of labels that are meant to be updated periodically
         """
-        id = serial_funcs.g_list_message_info[serial_funcs.INDEX_ID]
+        id = 0
 
         # We decrement by one because the id of encoders are shifted of 1 (1, 2, 3 instead of list positioning 0, 1, 2)
-        list_labels[id - 1].configure(text = str(serial_funcs.g_list_message_info[serial_funcs.INDEX_DATA])) 
+        list_labels[id].configure(text = str(serial_funcs.g_list_message_info[serial_funcs.INDEX_MOTOR_POSITION]))
 
     def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
         """! Creates a combobox to list out all COM ports currently used by computer
