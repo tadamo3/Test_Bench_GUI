@@ -7,6 +7,7 @@
 # All its components and callback functions will be defined here.
 
 # Imports
+import tkinter
 import customtkinter
 from threading import Thread
 from threading import Event
@@ -23,11 +24,20 @@ TITLE_VALUE_X       = 50
 TITLE_VALUE_Y       = 50
 
 BUTTON_DIRECTION_CENTER_X = 200
-BUTTON_DIRECTION_CENTER_Y = 275
+BUTTON_DIRECTION_CENTER_Y = 250
 
-BUTTON_NEXT_X = 300
-BUTTON_NEXT_Y = 500
+BUTTON_A_X          = 500
+BUTTON_A_Y          = 200
+BUTTON_B_X          = 500
+BUTTON_B_Y          = 275
 
+POSITION_X_X        = 50
+POSITION_Y_X        = 100
+POSITION_X_Y        = 50
+POSITION_Y_Y        = 135
+
+entry_pos_x         = 500
+entry_pos_y         = 125
 
 
 ## Global variables
@@ -87,8 +97,33 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         label.place(
                     x = label_pos_x,
                     y = label_pos_y)
+        
+        label.text = text
 
         return label
+    
+    def file_creator(self, name, point, x, y):
+        fn = name
+        with open(fn, 'w') as f:
+            f.write(point)
+            f.write('\n')
+            f.write(x)
+            f.write('\n')
+            f.write(y)
+            f.write('\n')
+            f.close()
+    
+    
+    def update_labels_encoders(self, list_labels):
+        """! Updates Programs Page frame labels according to the information received from the STM32 feedback
+        @param list_labels      List of labels that are meant to be updated periodically
+        """
+        id = serial_funcs.g_list_message_info[serial_funcs.INDEX_ID]
+
+        # We decrement by one because the id of encoders are shifted of 1 (1, 2, 3 instead of list positioning 0, 1, 2)
+        list_labels[id - 1].configure(text = str(serial_funcs.g_list_message_info[serial_funcs.INDEX_DATA])) 
+
+    
 
     def __init__(self, master, **kwargs):
         """! Initialisation of a Programs Page Frame
@@ -97,37 +132,57 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
 
         ## Generate all comboboxes
-        
-
-        ## Generate all buttons
-        btn_direction_up    = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y + 100), "Going Up")
-        btn_direction_down  = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y - 100), "Going Down")
-        btn_direction_left  = self.button_generate((BUTTON_DIRECTION_CENTER_X - 100), BUTTON_DIRECTION_CENTER_Y, "Going Left")
-        btn_direction_right = self.button_generate((BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
-
-        btn_next = self.button_generate(BUTTON_NEXT_X, BUTTON_NEXT_Y, "Next")
-
-
-        btn_direction_up2    = self.button_generate(BUTTON_DIRECTION_CENTER_X + 400, (BUTTON_DIRECTION_CENTER_Y + 100), "Going Up")
-        btn_direction_up2.configure(state = "disabled")
-
-        btn_direction_down2  = self.button_generate(BUTTON_DIRECTION_CENTER_X +400, (BUTTON_DIRECTION_CENTER_Y - 100), "Going Down")
-        btn_direction_down2.configure(state = "disabled")
-
-        btn_direction_left2  = self.button_generate((BUTTON_DIRECTION_CENTER_X + 300), BUTTON_DIRECTION_CENTER_Y, "Going Left")
-        btn_direction_left2.configure(state = "disabled")
-
-        btn_direction_right2 = self.button_generate((BUTTON_DIRECTION_CENTER_X + 500), BUTTON_DIRECTION_CENTER_Y, "Going Right")
-        btn_direction_right2.configure(state = "disabled")
-
-
-        ## Generate all sliders
-        
 
         ## Generate all labels
         title = self.label_generate(TITLE_VALUE_X, TITLE_VALUE_Y, "Tools positions")
 
-        ## Start thread to read data rx buffer
-        # Continous read of the serial communication RX data
-        #thread_rx_data = Thread(target = self.read_rx_buffer)
-        #thread_rx_data.start()
+        pos_x = self.label_generate(POSITION_X_X, POSITION_Y_X, "X position : ")
+        pos_x_val = self.label_generate((POSITION_X_X + 75), POSITION_Y_X, "123456")
+
+        pos_y = self.label_generate(POSITION_X_Y, POSITION_Y_Y, "Y position : ")
+        pos_y_val = self.label_generate((POSITION_X_Y + 75), POSITION_Y_Y, "123456")
+        
+        ## Generate all entry
+
+        file_name = customtkinter.CTkEntry(
+                                        master = self,
+                                        placeholder_text="File name")
+        file_name.place(
+                    x = entry_pos_x, 
+                    y = entry_pos_y, 
+                    anchor = tkinter.CENTER)
+
+        ## Generate all buttons
+        btn_direction_up    = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y - 50), "Going Up")
+        btn_direction_down  = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y + 50), "Going Down")
+        btn_direction_left  = self.button_generate((BUTTON_DIRECTION_CENTER_X - 100), BUTTON_DIRECTION_CENTER_Y, "Going Left")
+        btn_direction_right = self.button_generate((BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
+
+
+        button_A = customtkinter.CTkButton(
+                                            master = self,
+                                            text = "Save point A",
+                                            command = self.file_creator(file_name.get, 'Position A :', pos_x_val.text, pos_y_val.text))
+        
+        button_A.place(
+                        x = BUTTON_A_X,
+                        y = BUTTON_A_Y)
+        
+        button_B = customtkinter.CTkButton(
+                                            master = self,
+                                            text = "Save point B",
+                                            command = self.file_creator(file_name.get, 'Position B :', pos_x_val.text, pos_y_val.text))
+        
+        button_B.place(
+                        x = BUTTON_B_X,
+                        y = BUTTON_B_Y)
+
+
+
+
+        ## Generate all sliders
+
+
+        
+
+        #update_pos_val = self.update_labels_encoders(pos_x_val)
