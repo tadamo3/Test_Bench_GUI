@@ -8,6 +8,8 @@
 # Imports
 import serial
 
+path_logs = 'logs/encoder_logs.txt'
+
 # Constants
 BAUDRATE = 115200
 ENDIANNESS = 'little'
@@ -134,6 +136,11 @@ def receive_serial_data(list_message_info, list_com_device_info):
                 "Status movement: "     + str(list_message_info[INDEX_STATUS_MOVEMENT_MOTOR]) +
                 "Status motor: "        + str(list_message_info[INDEX_STATUS_MOTOR])
             )
+        
+        logs = open(path_logs, 'a')
+        logs.write(str(list_message_info[INDEX_MOTOR_POSITION]))
+        logs.write('\n')
+        logs.close()
 
 def transmit_serial_data(id, command, mode, data, list_com_device_info):
     """! Builds the desired message to transmit and writes it to the microcontroler
@@ -144,6 +151,7 @@ def transmit_serial_data(id, command, mode, data, list_com_device_info):
     @list_com_device_info   Notable information for all connected devices
     """
     if (list_com_device_info[0] != 0):
+
         # Create message with appropriate positioning of bytes
         message_to_send = data + (command << 16) + (mode << 22) + (id << 24)
 

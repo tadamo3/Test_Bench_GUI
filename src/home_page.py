@@ -82,7 +82,7 @@ class HomePageFrame(customtkinter.CTkFrame):
     """
     list_slider_vertical_info = [0]
     list_slider_horizontal_info = [0]
-    list_positions_to_reach = [50, 100]
+    list_positions_to_reach = [50, 80]
     current_checkpoint_to_reach = 0
 
     def read_rx_buffer(self, list_labels):
@@ -109,21 +109,26 @@ class HomePageFrame(customtkinter.CTkFrame):
         while (home_page_stop_threads_event.is_set() != True):
             if ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOVEMENT_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 1)):
                 time.sleep(1)
+
                 serial_funcs.transmit_serial_data(
                                                     serial_funcs.ID_MOTOR_VERTICAL_LEFT,
                                                     serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT,
                                                     serial_funcs.MODE_POSITION_CONTROL,
                                                     self.list_positions_to_reach[0],
                                                     serial_funcs.g_list_connected_device_info)
+
                 self.current_checkpoint_to_reach = 0
+
             elif ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOVEMENT_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 0)):
                 time.sleep(1)
+
                 serial_funcs.transmit_serial_data(
                                                     serial_funcs.ID_MOTOR_VERTICAL_LEFT,
                                                     serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT,
                                                     serial_funcs.MODE_POSITION_CONTROL,
                                                     self.list_positions_to_reach[1],
                                                     serial_funcs.g_list_connected_device_info)
+
                 self.current_checkpoint_to_reach = 1
 
             time.sleep(0.1)

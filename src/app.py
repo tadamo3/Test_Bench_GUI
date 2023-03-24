@@ -45,7 +45,7 @@ def frame_selector(frame_to_init):
 
     # Initialize the correct frame
     App.dict_frames[frame_to_init].pack(
-                                        in_         = app_window, 
+                                        in_         = app_window,
                                         side        = tkinter.TOP, 
                                         fill        = tkinter.BOTH,
                                         expand      = True, 
