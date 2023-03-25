@@ -227,8 +227,11 @@ class HomePageFrame(customtkinter.CTkFrame):
                 serial_funcs.transmit_serial_data(
                                                     serial_funcs.ID_MOTOR_VERTICAL_LEFT,
                                                     serial_funcs.COMMAND_MOTOR_CHANGE_SPEED,
+                                                    serial_funcs.MODE_CHANGE_PARAMS,
                                                     slider_value,
                                                     list_com_device_info)
+
+                print(slider_value)
                 list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX] = slider_value
 
     def label_generate(self, label_pos_x, label_pos_y, text):

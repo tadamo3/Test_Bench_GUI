@@ -38,8 +38,8 @@ def frame_selector(frame_to_init):
     # Bind / Unbind buttons related to the frames
     func_id = None
     if (frame_to_init == 'Home'):
-        func_id = app_window.bind('<KeyPress>', manual_control.key_pressed)
-        app_window.bind('<KeyRelease>', manual_control.key_released)
+        func_id = app_window.bind('<KeyPress>', lambda event, previous_motor =  manual_control.previous_motor_controlled: manual_control.key_pressed(event, previous_motor))
+        app_window.bind('<KeyRelease>', lambda event, previous_motor = manual_control.previous_motor_controlled: manual_control.key_released(event, previous_motor))
     else:
         app_window.unbind('<KeyPress>', func_id)
 
