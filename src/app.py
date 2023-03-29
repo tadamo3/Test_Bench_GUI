@@ -8,6 +8,7 @@
 # Imports
 import tkinter
 import customtkinter
+import time
 
 import common
 import home_page
@@ -21,9 +22,9 @@ APP_WIDTH = 1450
 APP_HEIGHT = 1500
 
 ## Indexes to access different pages
-INDEX_HOME = 0
-INDEX_PROGRAMS = 1
-INDEX_LOGS = 2
+INDEX_HOME      = 0
+INDEX_PROGRAMS  = 1
+INDEX_LOGS      = 2
 
 # Functions
 def frame_selector(frame_to_init):

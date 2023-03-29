@@ -108,7 +108,7 @@ def connect_to_port(selected_com_port):
 
             return stm_32
         except:
-            #print("No connection found")
+            print("No connection found")
             
             return None
 
@@ -135,7 +135,7 @@ def receive_serial_data(list_message_info, list_com_device_info):
         print(
                 "ID: "                  + str(list_message_info[INDEX_ID]) +
                 "Status movement: "     + str(list_message_info[INDEX_STATUS_MOVEMENT_MOTOR]) +
-                "State: "        + str(list_message_info[INDEX_STATUS_MOTOR])
+                "State: "               + str(list_message_info[INDEX_STATUS_MOTOR])
             )
         
         logs = open(path_logs, 'a')
