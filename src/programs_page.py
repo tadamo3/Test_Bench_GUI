@@ -20,8 +20,8 @@ import serial_funcs
 HOME_PAGE_WIDTH     = 1450
 HOME_PAGE_HEIGHT    = 1500
 
-TITLE_VALUE_X       = 50
-TITLE_VALUE_Y       = 50
+NP_VALUE_X       = 50
+NP_VALUE_Y       = 50
 
 BUTTON_DIRECTION_CENTER_X = 200
 BUTTON_DIRECTION_CENTER_Y = 250
@@ -38,6 +38,19 @@ POSITION_Y_Y        = 135
 
 entry_pos_x         = 500
 entry_pos_y         = 125
+
+SLIDER_VERTICAL_SPEED_X                 = 20
+SLIDER_VERTICAL_SPEED_Y                 = 500
+SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX  = 0
+SLIDER_VERTICAL_SPEED_RANGE_MAX         = 100
+
+SLIDER_HORIZONTAL_SPEED_X                   = 20
+SLIDER_HORIZONTAL_SPEED_Y                   = 575
+SLIDER_HORIZONTAL_SPEED_PREV_VALUE_INDEX    = 0
+SLIDER_HORIZONTAL_SPEED_RANGE_MAX           = 100
+
+FRAME_POS_X = 780
+FRAME_POS_Y = 0
 
 
 ## Global variables
@@ -103,25 +116,16 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         return label
     
     def file_creator(self, name, point, x, y):
-        fn = name
-        with open(fn, 'w') as f:
-            f.write(point)
-            f.write('\n')
-            f.write(x)
-            f.write('\n')
-            f.write(y)
-            f.write('\n')
-            f.close()
+        if (name != ''):
+            with open(name, 'w') as f:
+                f.write(point)
+                f.write('\n')
+                f.write(x)
+                f.write('\n')
+                f.write(y)
+                f.write('\n')
+                f.close()
     
-    
-    def update_labels_encoders(self, list_labels):
-        """! Updates Programs Page frame labels according to the information received from the STM32 feedback
-        @param list_labels      List of labels that are meant to be updated periodically
-        """
-        id = serial_funcs.g_list_message_info[serial_funcs.INDEX_ID]
-
-        # We decrement by one because the id of encoders are shifted of 1 (1, 2, 3 instead of list positioning 0, 1, 2)
-        list_labels[id - 1].configure(text = str(serial_funcs.g_list_message_info[serial_funcs.INDEX_DATA])) 
 
     
 
@@ -134,8 +138,6 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         ## Generate all comboboxes
 
         ## Generate all labels
-        title = self.label_generate(TITLE_VALUE_X, TITLE_VALUE_Y, "Tools positions")
-
         pos_x = self.label_generate(POSITION_X_X, POSITION_Y_X, "X position : ")
         pos_x_val = self.label_generate((POSITION_X_X + 75), POSITION_Y_X, "123456")
 
@@ -153,16 +155,18 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                     anchor = tkinter.CENTER)
 
         ## Generate all buttons
+        
+        
+        new_prog            = self.button_generate(NP_VALUE_X, NP_VALUE_Y, "New Program")
         btn_direction_up    = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y - 50), "Going Up")
         btn_direction_down  = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y + 50), "Going Down")
         btn_direction_left  = self.button_generate((BUTTON_DIRECTION_CENTER_X - 100), BUTTON_DIRECTION_CENTER_Y, "Going Left")
         btn_direction_right = self.button_generate((BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
 
-
         button_A = customtkinter.CTkButton(
                                             master = self,
                                             text = "Save point A",
-                                            command = self.file_creator(file_name.get, 'Position A :', pos_x_val.text, pos_y_val.text))
+                                            command = self.file_creator(file_name.get(), 'Position A :', pos_x_val.text, pos_y_val.text))
         
         button_A.place(
                         x = BUTTON_A_X,
@@ -171,7 +175,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         button_B = customtkinter.CTkButton(
                                             master = self,
                                             text = "Save point B",
-                                            command = self.file_creator(file_name.get, 'Position B :', pos_x_val.text, pos_y_val.text))
+                                            command = self.file_creator(file_name.get(), 'Position B :', pos_x_val.text, pos_y_val.text))
         
         button_B.place(
                         x = BUTTON_B_X,
@@ -182,7 +186,18 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
         ## Generate all sliders
 
+        slider_vertical_speed = self.slider_generate(SLIDER_VERTICAL_SPEED_X, SLIDER_VERTICAL_SPEED_Y, SLIDER_VERTICAL_SPEED_RANGE_MAX)
+        slider_horizontal_speed = self.slider_generate(SLIDER_HORIZONTAL_SPEED_X, SLIDER_HORIZONTAL_SPEED_Y, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
 
+        ## Scrollable frame
+
+        programs_list = customtkinter.CTkScrollableFrame(
+                                        master  =   self, 
+                                        width   =   200, 
+                                        height  =   200)
         
-
-        #update_pos_val = self.update_labels_encoders(pos_x_val)
+        #programs_list.anchor("center")
+        programs_list.place(
+                       relx = 1,
+                       rely = 0,
+                       anchor = tkinter.NE)
