@@ -12,8 +12,8 @@ import customtkinter
 from threading import Thread
 from threading import Event
 import time
-
 import serial_funcs
+import os
 
 # Global constants
 ## The width and height of the home page
@@ -116,8 +116,8 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         return label
     
     def file_creator(self, name, point, x, y):
-        if (name != ''):
-            with open(name, 'w') as f:
+        #if (name != ''):
+            with open(os.path.join("D:\Test_Bench_GUI\Zimmer Programs",name+".txt"), "a") as f:
                 f.write(point)
                 f.write('\n')
                 f.write(x)
@@ -125,6 +125,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                 f.write(y)
                 f.write('\n')
                 f.close()
+                print(point+" saved in "+name+".txt")
     
 
     
@@ -165,8 +166,9 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
         button_A = customtkinter.CTkButton(
                                             master = self,
-                                            text = "Save point A",
-                                            command = self.file_creator(file_name.get(), 'Position A :', pos_x_val.text, pos_y_val.text))
+                                            text = "Save point A")
+        
+        button_A.configure(command = lambda : self.file_creator(file_name.get(), 'Position A :', str(pos_x_val), str(pos_y_val)))
         
         button_A.place(
                         x = BUTTON_A_X,
@@ -174,8 +176,9 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         
         button_B = customtkinter.CTkButton(
                                             master = self,
-                                            text = "Save point B",
-                                            command = self.file_creator(file_name.get(), 'Position B :', pos_x_val.text, pos_y_val.text))
+                                            text = "Save point B")
+        
+        button_B.configure(command = lambda : self.file_creator(file_name.get(), 'Position B :', str(pos_x_val), str(pos_y_val)))
         
         button_B.place(
                         x = BUTTON_B_X,
