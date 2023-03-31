@@ -168,7 +168,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                             master = self,
                                             text = "Save point A")
         
-        button_A.configure(command = lambda : self.file_creator(file_name.get(), 'Position A :', str(pos_x_val), str(pos_y_val)))
+        button_A.configure(command = lambda : self.file_creator(file_name.get(), 'Position A :', pos_x_val.text, pos_y_val.text))
         
         button_A.place(
                         x = BUTTON_A_X,
@@ -178,7 +178,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                             master = self,
                                             text = "Save point B")
         
-        button_B.configure(command = lambda : self.file_creator(file_name.get(), 'Position B :', str(pos_x_val), str(pos_y_val)))
+        button_B.configure(command = lambda : self.file_creator(file_name.get(), 'Position B :', pos_x_val.text, pos_y_val.text))
         
         button_B.place(
                         x = BUTTON_B_X,
