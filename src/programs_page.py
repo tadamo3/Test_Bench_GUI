@@ -14,6 +14,7 @@ from threading import Event
 import time
 import serial_funcs
 import os
+from glob import glob
 
 # Global constants
 ## The width and height of the home page
@@ -117,7 +118,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
     
     def file_creator(self, name, point, x, y):
         #if (name != ''):
-            with open(os.path.join("D:\Test_Bench_GUI\Zimmer Programs",name+".txt"), "a") as f:
+            with open(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs',name+".txt"), "a") as f:
                 f.write(point)
                 f.write('\n')
                 f.write(x)
@@ -192,15 +193,33 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         slider_vertical_speed = self.slider_generate(SLIDER_VERTICAL_SPEED_X, SLIDER_VERTICAL_SPEED_Y, SLIDER_VERTICAL_SPEED_RANGE_MAX)
         slider_horizontal_speed = self.slider_generate(SLIDER_HORIZONTAL_SPEED_X, SLIDER_HORIZONTAL_SPEED_Y, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
 
-        ## Scrollable frame
 
-        programs_list = customtkinter.CTkScrollableFrame(
-                                        master  =   self, 
-                                        width   =   200, 
-                                        height  =   200)
+        ## Listbox
+
+        programs_list = tkinter.Listbox(
+                                        master  =   self,
+                                        width   =   80, 
+                                        height  =   100)
         
-        #programs_list.anchor("center")
         programs_list.place(
                        relx = 1,
                        rely = 0,
                        anchor = tkinter.NE)
+
+        file_list = glob(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs', "*.txt"))
+		
+        for f in file_list:
+            programs_list.insert(0,f)
+    
+        ## Scrollable frame
+
+        #programs_list = customtkinter.CTkScrollableFrame(
+        #                                master  =   self, 
+        #                                width   =   200, 
+        #                                height  =   200)
+        
+        #programs_list.insert()
+        #programs_list.place(
+        #               relx = 1,
+        #               rely = 0,
+        #               anchor = tkinter.NE)
