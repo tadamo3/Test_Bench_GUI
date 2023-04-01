@@ -9,8 +9,6 @@
 import tkinter
 import customtkinter
 
-import home_page
-
 # Functions
 def set_appearance(appearance_mode, default_color_theme):
     """! Sets the appearance of a given page
@@ -19,22 +17,6 @@ def set_appearance(appearance_mode, default_color_theme):
     """
     customtkinter.set_appearance_mode(appearance_mode)
     customtkinter.set_default_color_theme(default_color_theme)
-
-def page_selector(page_to_select):
-    """! Switches to the desired page (puts the page frame on top of all other frames)
-    @param page_to_select   The page to switch to
-    """
-    
-
-
-
-
-
-
-
-
-
-
 
 def generate_window(window_type, window_name):
     """! Generates a given window type
@@ -71,3 +53,57 @@ def close_window(window_to_close):
     @param window_to_close  The window to call the destroy() function on
     """
     window_to_close.destroy()
+
+def button_generate(self, button_pos_x, button_pos_y, text):
+        button = customtkinter.CTkButton(
+                                            master = self,
+                                            text = text)
+        
+        button.place(
+                        x = button_pos_x,
+                        y = button_pos_y)
+
+        
+        return button
+    
+def combobox_generate(self, combobox_pos_x, combobox_pos_y, text): 
+    combobox = customtkinter.CTkComboBox(
+                                            master = self,
+                                            values = text, 
+                                            dynamic_resizing = True
+                                        )
+
+def slider_generate(self, slider_pos_x, slider_pos_y, range):
+    slider = customtkinter.CTkSlider(
+                                        master          = self,
+                                        from_           = 0,
+                                        to              = range,
+                                        number_of_steps = range)
+    slider.place(
+                    x = slider_pos_x,
+                    y = slider_pos_y)
+
+    return slider
+
+def label_generate(self, label_pos_x, label_pos_y, text):
+        label = customtkinter.CTkLabel(
+                                        master          = self,
+                                        text            = text,
+                                        corner_radius   = 8)
+        
+        label.place(
+                    x = label_pos_x,
+                    y = label_pos_y)
+
+        return label
+
+def entry_generate(self, label_pos_x, label_pos_y, text):
+    entry = customtkinter.CTkEntry(
+                                    master = self,
+                                    placeholder_text= text)
+    
+    entry.place(
+                x = label_pos_x,
+                y = label_pos_y)
+    
+    return entry

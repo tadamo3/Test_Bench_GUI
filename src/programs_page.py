@@ -16,8 +16,8 @@ import serial_funcs
 
 # Global constants
 ## The width and height of the home page
-HOME_PAGE_WIDTH     = 780
-HOME_PAGE_HEIGHT    = 520
+HOME_PAGE_WIDTH     = 1450
+HOME_PAGE_HEIGHT    = 1500
 
 TITLE_VALUE_X       = 50
 TITLE_VALUE_Y       = 50

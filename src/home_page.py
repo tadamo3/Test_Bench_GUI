@@ -11,79 +11,190 @@ import customtkinter
 from serial.tools import list_ports
 from threading import Thread
 from threading import Event
+from CTkMessagebox import CTkMessagebox
 import time
 
 import serial_funcs
+import app
+from common import button_generate, entry_generate, label_generate, combobox_generate, slider_generate
 
-# Global constants
+## Global constants
 ## The width and height of the home page
-HOME_PAGE_WIDTH     = 780
-HOME_PAGE_HEIGHT    = 520
+HOME_PAGE_WIDTH     = 1450
+HOME_PAGE_HEIGHT    = 1500
 
 ## Info about the combobox ports
 CBBOX_COM_PORTS_X   = 20
 CBBOX_COM_PORTS_Y   = 20
 CBBOX_WIDTH         = 175
 
-## Info about the vertical speed slider
-SLIDER_VERTICAL_SPEED_X                 = 20
-SLIDER_VERTICAL_SPEED_Y                 = 500
-SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX  = 0
-SLIDER_VERTICAL_SPEED_RANGE_MAX         = 100
-
-SLIDER_HORIZONTAL_SPEED_X                   = 20
-SLIDER_HORIZONTAL_SPEED_Y                   = 575
-SLIDER_HORIZONTAL_SPEED_PREV_VALUE_INDEX    = 0
-SLIDER_HORIZONTAL_SPEED_RANGE_MAX           = 100
-
+## Info about the encoders values placeholders
 LABEL_ENCODER_VERTICAL_LEFT_VALUE_X = 215
 LABEL_ENCODER_VERTICAL_LEFT_VALUE_Y = 700
 
-BUTTON_DIRECTION_CENTER_X = 400
-BUTTON_DIRECTION_CENTER_Y = 550
+INDEX_LABEL_ENCODER_VERTICAL_LEFT   = 0
+INDEX_LABEL_ENCODER_VERTICAL_RIGHT  = 1
+INDEX_LABEL_ENCODER_HORIZONTAL      = 2
 
-ID_NONE         = 0
-COMMAND_NONE    = 0
-DATA_NONE       = 0
+BUTTON_DIRECTION_CENTER_X   = 400
+BUTTON_DIRECTION_CENTER_Y   = 250
 
-INDEX_LABEL_ENCODER_VERTICAL_LEFT = 0
-INDEX_LABEL_ENCODER_VERTICAL_RIGHT = 1
-INDEX_LABEL_ENCODER_HORIZONTAL = 2
+## Info about the vertical speed slider
+SLIDER_VERTICAL_SPEED_X                 = BUTTON_DIRECTION_CENTER_X + 350
+SLIDER_VERTICAL_SPEED_Y                 = BUTTON_DIRECTION_CENTER_Y - 50
+SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX  = 0
+SLIDER_VERTICAL_SPEED_RANGE_MAX         = 100
+
+## Info about the horizontal speed slider
+SLIDER_HORIZONTAL_SPEED_X                   = BUTTON_DIRECTION_CENTER_X + 350
+SLIDER_HORIZONTAL_SPEED_Y                   = BUTTON_DIRECTION_CENTER_Y + 50
+SLIDER_HORIZONTAL_SPEED_PREV_VALUE_INDEX    = 0
+SLIDER_HORIZONTAL_SPEED_RANGE_MAX           = 100
+
+BUTTON_MANUAL_MODE_X        = 20
+BUTTON_MANUAL_MODE_Y        = 100
+BUTTON_AUTO_MODE_X          = 20 
+BUTTON_AUTO_MODE_Y          = BUTTON_MANUAL_MODE_Y + 100
+
+## Info about the Return button
+BUTTON_BACK_VALUE_X = 1000
+BUTTON_BACK_VALUE_Y = 60
+
+## Info about the entry textbox for position control
+ASK_ENTRY_VALUE_X = 200
+ASK_ENTRY_VALUE_Y = 300
+
+COMBOBOX_MOVEMENT_1_X = 100
+COMBOBOX_MOVEMENT_1_Y = 200
+
+LABEL_NUMBER_REPS_X = COMBOBOX_MOVEMENT_1_X + 700
+LABEL_NUMBER_REPS_Y = COMBOBOX_MOVEMENT_1_Y + 150
+
+## Maximal values we can travel to
+MAX_HORIZONTAL  = 30
+MAX_VERTICAL    = 30
+
+CHECKPOINT_A = 0
+CHECKPOINT_B = 1
+
+INDEX_MOVEMENT_UP       = 0
+INDEX_MOVEMENT_DOWN     = 1
+INDEX_MOVEMENT_RIGHT    = 2
+INDEX_MOVEMENT_LEFT     = 3
 
 ## Global variables
-# Event variable is false by default
-home_page_stop_threads_event = Event()
+list_buttons_manual_control = []
 
-# Classes
+## Classes
 class HomePageFrame(customtkinter.CTkFrame):
     """! Home page class for the Zimmer Test Bench\n
     Defines the components and callback functions of the home page
     """
     list_slider_vertical_info = [0]
     list_slider_horizontal_info = [0]
+    current_checkpoint_to_reach = 1
+    list_movement_entries = ["Up", "Down", "Right", "Left"]
 
-    def read_rx_buffer(self, list_labels):
-        """! Inserts in the task queue the message sent by the STM32 over serial communication\n
-        Sleeps for 500ms to keep a reasonable update rate
+    flag_is_auto_thread_stopped = False
+    flag_auto_thread_created_once = False
+
+    counter_repetitions = 0
+
+    def read_rx_buffer(self, stop_event):
+        """! Threaded function to receive data in a continuous stream\n
+        Sleeps for 10ms to match the send rate of the uC
         @param list_labels      List of labels that are meant to be updated periodically
         """
-        while (home_page_stop_threads_event.is_set() != True):
+        while (stop_event.is_set() != True):
             serial_funcs.receive_serial_data(
                                                 serial_funcs.g_list_message_info,
                                                 serial_funcs.g_list_connected_device_info)
 
-            self.update_labels_encoders(list_labels)
-
             time.sleep(0.01)
 
-    def update_labels_encoders(self, list_labels):
-        """! Updates Home Page frame labels according to the information received from the STM32 feedback
-        @param list_labels      List of labels that are meant to be updated periodically
-        """
-        id = serial_funcs.g_list_message_info[serial_funcs.INDEX_ID]
+    def determine_trajectory_parameters(self, direction_a, direction_b):
+        command_a = serial_funcs.COMMAND_RESERVED
+        command_b = serial_funcs.COMMAND_RESERVED
+        id = serial_funcs.ID_RESERVED
 
-        # We decrement by one because the id of encoders are shifted of 1 (1, 2, 3 instead of list positioning 0, 1, 2)
-        list_labels[id - 1].configure(text = str(serial_funcs.g_list_message_info[serial_funcs.INDEX_DATA])) 
+        if (direction_a == "Up"):
+            command_a = serial_funcs.COMMAND_MOTOR_VERTICAL_UP
+            id = serial_funcs.ID_MOTOR_VERTICAL_LEFT
+
+        elif (direction_a == "Down"):
+            command_a = serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN
+            id = serial_funcs.ID_MOTOR_VERTICAL_LEFT
+        
+        elif (direction_a == "Right"):
+            command_a = serial_funcs.COMMAND_MOTOR_HORIZONTAL_RIGHT
+            id = serial_funcs.ID_MOTOR_HORIZONTAL
+
+        elif (direction_a == "Left"):
+            command_a = serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT
+            id = serial_funcs.ID_MOTOR_HORIZONTAL
+
+        if (direction_b == "Up"):
+            command_b = serial_funcs.COMMAND_MOTOR_VERTICAL_UP
+            id = serial_funcs.ID_MOTOR_VERTICAL_LEFT
+
+        elif (direction_b == "Down"):
+            command_b = serial_funcs.COMMAND_MOTOR_VERTICAL_DOWN
+            id = serial_funcs.ID_MOTOR_VERTICAL_LEFT
+        
+        elif (direction_b == "Right"):
+            command_b = serial_funcs.COMMAND_MOTOR_HORIZONTAL_RIGHT
+            id = serial_funcs.ID_MOTOR_HORIZONTAL
+
+        elif (direction_b == "Left"):
+            command_b = serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT
+            id = serial_funcs.ID_MOTOR_HORIZONTAL
+
+        return id, command_a, command_b
+
+    def auto_mode(self, position_to_reach, direction_a, direction_b, label_reps, stop_event):
+        id, command_a, command_b = self.determine_trajectory_parameters(direction_a, direction_b)
+
+        # Start auto mode trajectory
+        serial_funcs.transmit_serial_data(
+                                                    id,
+                                                    command_a,
+                                                    serial_funcs.MODE_POSITION_CONTROL,
+                                                    position_to_reach,
+                                                    serial_funcs.g_list_connected_device_info)
+
+        while (stop_event.is_set() != True):
+            self.counter_repetitions = self.counter_repetitions + 1
+            while (serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_IN_TRAJ):
+                pass
+
+            if ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 1)):
+                serial_funcs.transmit_serial_data(
+                                                    id,
+                                                    command_b,
+                                                    serial_funcs.MODE_POSITION_CONTROL,
+                                                    position_to_reach,
+                                                    serial_funcs.g_list_connected_device_info)
+
+                self.current_checkpoint_to_reach = 0
+
+            elif ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 0)):
+                serial_funcs.transmit_serial_data(
+                                                    id,
+                                                    command_a,
+                                                    serial_funcs.MODE_POSITION_CONTROL,
+                                                    position_to_reach,
+                                                    serial_funcs.g_list_connected_device_info)
+
+                self.current_checkpoint_to_reach = 1
+                self.counter_repetitions = self.counter_repetitions + 1
+
+            label_reps.configure(text = str(self.counter_repetitions))
+
+            time.sleep(0.1)
+
+        if (stop_event.is_set() == True):
+            self.counter_repetitions = -99
+            label_reps.configure(text = str(self.counter_repetitions))
 
     def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
         """! Creates a combobox to list out all COM ports currently used by computer
@@ -111,17 +222,6 @@ class HomePageFrame(customtkinter.CTkFrame):
 
         return combobox
 
-    def button_generate(self, button_pos_x, button_pos_y, text):
-        button = customtkinter.CTkButton(
-                                            master = self,
-                                            text = text)
-        
-        button.place(
-                        x = button_pos_x,
-                        y = button_pos_y)
-
-        return button
-
     def button_com_ports_click(self, combobox_com_port, list_com_device_info):
         """! On click, prints out the current value of the COM ports combobox
         @param combobox_com_port    StringVar containing the current COM port selected
@@ -133,19 +233,7 @@ class HomePageFrame(customtkinter.CTkFrame):
         else:
             print("No COM port selected")
 
-    def slider_generate(self, slider_pos_x, slider_pos_y, range):
-        slider = customtkinter.CTkSlider(
-                                            master          = self,
-                                            from_           = 0,
-                                            to              = range,
-                                            number_of_steps = range)
-        slider.place(
-                        x = slider_pos_x,
-                        y = slider_pos_y)
-
-        return slider
-
-    def slider_speed_callback(self, slider_value, list_slider_info, list_com_device_info):
+    def slider_speed_callback(self, slider_value, list_slider_info, slider_type, label_slider, list_com_device_info):
         """! Every time a new value is set, sends the updated speed value to the device
         @param slider_value         The selected speed value for the vertical motor speed
         @param list_slider_info     Notable information for a specific slider
@@ -156,91 +244,227 @@ class HomePageFrame(customtkinter.CTkFrame):
             previous_slider_value = round(list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX])
 
             if (slider_value != previous_slider_value):
-                serial_funcs.transmit_serial_data(
-                                                    serial_funcs.ID_MOTOR_VERTICAL_LEFT,
-                                                    serial_funcs.COMMAND_MOTOR_CHANGE_SPEED,
-                                                    slider_value,
-                                                    list_com_device_info)
+                if (slider_type == "Vertical"):
+                    serial_funcs.transmit_serial_data(
+                                                        serial_funcs.ID_MOTOR_VERTICAL_LEFT,
+                                                        serial_funcs.COMMAND_MOTOR_CHANGE_SPEED,
+                                                        serial_funcs.MODE_CHANGE_PARAMS,
+                                                        slider_value,
+                                                        list_com_device_info)
+
+                if (slider_type == "Horizontal"):
+                    serial_funcs.transmit_serial_data(
+                                                        serial_funcs.ID_MOTOR_HORIZONTAL,
+                                                        serial_funcs.COMMAND_MOTOR_CHANGE_SPEED,
+                                                        serial_funcs.MODE_CHANGE_PARAMS,
+                                                        slider_value,
+                                                        list_com_device_info)
                 list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX] = slider_value
-
-    def label_generate(self, label_pos_x, label_pos_y, text):
-        label = customtkinter.CTkLabel(
-                                        master          = self,
-                                        text            = text,
-                                        corner_radius   = 8)
         
-        label.place(
-                    x = label_pos_x,
-                    y = label_pos_y)
+        speed_value_mm_per_sec = int((72000000 / (65000 - 450 * slider_value)) * (1 / 80))
+        label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
+    
+    def button_back_click(self, btn_back, list):
+        # Destroy all previous components generated beforehand
+        btn_back.place_forget() 
 
-        return label
+        for i in range(len(list)):
+            list[i].place_forget()
 
-    def button_start_auto_mode_click(self, list_com_device_info):
-        serial_funcs.transmit_serial_data(
-                                            serial_funcs.ID_MOTOR_VERTICAL_LEFT,
-                                            serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT,
-                                            serial_funcs.MODE_POSITION_CONTROL,
-                                            serial_funcs.DATA_NONE,
-                                            serial_funcs.g_list_connected_device_info)
+        # Generate button modes 
+        btn_manual_mode = button_generate(self, BUTTON_MANUAL_MODE_X, BUTTON_MANUAL_MODE_Y, "Manual Mode")
+        btn_manual_mode.configure(command=lambda:self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
+
+        btn_auto_mode = button_generate(self, BUTTON_AUTO_MODE_X, BUTTON_AUTO_MODE_Y, "Automatic mode")
+        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
+
+    def button_submit_click(self, button_submit, entry_position, combobox_direction_1, combobox_direction_2, label_reps):
+        desired_position = int(entry_position.get())
+        desired_direction_1 = combobox_direction_1.get()
+        desired_direction_2 = combobox_direction_2.get()
+
+        if (button_submit.cget("text") == "Submit"):
+            button_submit.configure(text = "Stop", fg_color = '#EE3B3B')
+        else:
+            button_submit.configure(text = "Submit", fg_color = '#66CD00')
+
+        # Default thread
+        thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction_1, desired_direction_2, label_reps, app.home_page_auto_mode_thread_event, ))
+
+        if (self.flag_auto_thread_created_once == False):
+            thread_auto_mode.start()
+
+            self.flag_auto_thread_created_once = True
+        else:
+            if (self.flag_is_auto_thread_stopped == True):
+                app.home_page_auto_mode_thread_event.clear()
+
+                thread_auto_mode = None
+                thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction_1, desired_direction_2, label_reps, app.home_page_auto_mode_thread_event, ))
+                thread_auto_mode.start()
+
+                self.flag_is_auto_thread_stopped = False
+            else:
+                app.home_page_auto_mode_thread_event.set()
+
+                self.flag_is_auto_thread_stopped = True
+
+    def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode):
+        # Destroy the modes buttons
+        button_manual_mode.place_forget()
+        button_auto_mode.place_forget()
+
+        # Generate components
+        # Position control input values
+        combobox_movement_1 = customtkinter.CTkOptionMenu(
+                                                        master = self,
+                                                        values = self.list_movement_entries, 
+                                                        dynamic_resizing = False)
+        combobox_movement_1.set("Choose 1st movement")
+        combobox_movement_1.place(x = COMBOBOX_MOVEMENT_1_X, y = COMBOBOX_MOVEMENT_1_Y)
+
+        combobox_movement_2 = customtkinter.CTkOptionMenu(
+                                                        master = self,
+                                                        values = self.list_movement_entries, 
+                                                        dynamic_resizing = False)
+        combobox_movement_2.set("Choose 2nd movement")
+        combobox_movement_2.place(x = COMBOBOX_MOVEMENT_1_X, y = COMBOBOX_MOVEMENT_1_Y + 150)
+
+        entry_desired_position = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y, "Enter here")
+        label_desired_position = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y - 30, "Amplitude (mm)")
+
+        label_visualize_vertical_speed      = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y - 5, "20 mm/s")
+        label_visualize_horizontal_speed    = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y + 95, "20 mm/s")
+
+        slider_vertical_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y, SLIDER_VERTICAL_SPEED_RANGE_MAX)
+        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
+                                                                                                                                slider_value,
+                                                                                                                                self.list_slider_vertical_info,
+                                                                                                                                "Vertical",
+                                                                                                                                label_visualize_vertical_speed,
+                                                                                                                                serial_funcs.g_list_connected_device_info))
+
+        slider_horizontal_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 100, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
+        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
+                                                                                                                                slider_value,
+                                                                                                                                self.list_slider_horizontal_info,
+                                                                                                                                "Horizontal",
+                                                                                                                                label_visualize_horizontal_speed,
+                                                                                                                                serial_funcs.g_list_connected_device_info))
+
+        label_vertical_speed_slider     = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y - 30, "Vertical Speed (mm/s)")
+        label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 70, "Horizontal speed (mm/s)")
+
+        label_number_reps_indicator = label_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y, "Number of reps: ")
+        label_number_reps = label_generate(self, LABEL_NUMBER_REPS_X + 100, LABEL_NUMBER_REPS_Y, "")
+
+        btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 700, COMBOBOX_MOVEMENT_1_Y + 75, "Submit")
+        btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement_1, combobox_movement_2, label_number_reps), fg_color = '#66CD00')
+
+        # Return button configuration
+        list_items_to_delete = [
+                                label_desired_position,
+                                entry_desired_position,
+                                slider_horizontal_speed,
+                                slider_vertical_speed,
+                                combobox_movement_1,
+                                combobox_movement_2,
+                                btn_submit,
+                                label_number_reps,
+                                label_horizontal_speed_slider,
+                                label_vertical_speed_slider]
+
+        btn_back  = button_generate(self, BUTTON_BACK_VALUE_X, BUTTON_BACK_VALUE_Y, "Back")
+        btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
+
+    def button_manual_mode_click(self,  button_manual_mode, button_auto_mode):
+        # Delete mode selection buttons
+        button_manual_mode.place_forget()
+        button_auto_mode.place_forget()
+
+        # Generate direction buttons
+        btn_direction_up = button_generate(self, BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y - 100), "Going Up")
+        btn_direction_up.configure(fg_color = '#3D59AB', state = "disabled")
+            
+        btn_direction_down = button_generate(self, BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y + 100), "Going Down")
+        btn_direction_down.configure(fg_color = '#3D59AB', state = "disabled")
+
+        btn_direction_left = button_generate(self, (BUTTON_DIRECTION_CENTER_X - 100), BUTTON_DIRECTION_CENTER_Y, "Going Left")
+        btn_direction_left.configure(fg_color = '#3D59AB', state = "disabled")
+
+        btn_direction_right = button_generate(self, (BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
+        btn_direction_right.configure(fg_color = '#3D59AB', state = "disabled")
+
+        # List with all buttons for manual control in order to change their colors
+        if (len(list_buttons_manual_control) == 0):
+            list_buttons_manual_control.append(btn_direction_up)
+            list_buttons_manual_control.append(btn_direction_down)
+            list_buttons_manual_control.append(btn_direction_left)
+            list_buttons_manual_control.append(btn_direction_right)
+
+        ## Generate sliders 
+        label_visualize_vertical_speed      = label_generate(self, SLIDER_VERTICAL_SPEED_X + 200, SLIDER_VERTICAL_SPEED_Y - 5, "20 mm/s")
+        label_visualize_horizontal_speed    = label_generate(self, SLIDER_HORIZONTAL_SPEED_X + 200, SLIDER_HORIZONTAL_SPEED_Y - 5, "20 mm/s")
+        
+        slider_vertical_speed = slider_generate(self, SLIDER_VERTICAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y - 50, SLIDER_VERTICAL_SPEED_RANGE_MAX)
+        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
+                                                                                                                                slider_value,
+                                                                                                                                self.list_slider_vertical_info,
+                                                                                                                                "Vertical",
+                                                                                                                                label_visualize_vertical_speed,
+                                                                                                                                serial_funcs.g_list_connected_device_info))
+
+        slider_horizontal_speed = slider_generate(self, SLIDER_HORIZONTAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y + 50, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
+        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
+                                                                                                                                slider_value,
+                                                                                                                                self.list_slider_horizontal_info,
+                                                                                                                                "Horizontal",
+                                                                                                                                label_visualize_horizontal_speed,
+                                                                                                                                serial_funcs.g_list_connected_device_info))
+
+        label_vertical_speed_slider     = label_generate(self, SLIDER_VERTICAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y - 80, "Vertical Speed (mm/s)")
+        label_horizontal_speed_slider   = label_generate(self, SLIDER_HORIZONTAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y + 20, "Horizontal speed (mm/s)")
+
+        # Generate return button and items to delete when pressed
+        list_items_to_delete = [
+                                btn_direction_up, 
+                                btn_direction_down, 
+                                btn_direction_left,
+                                btn_direction_right,
+                                slider_vertical_speed,
+                                slider_horizontal_speed,
+                                label_horizontal_speed_slider,
+                                label_vertical_speed_slider,
+                                label_visualize_vertical_speed,
+                                label_visualize_horizontal_speed]
+
+        btn_back = button_generate(self, BUTTON_BACK_VALUE_X, BUTTON_BACK_VALUE_Y, "Back")
+        btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
 
     def __init__(self, master, **kwargs):
         """! Initialisation of a Home Page Frame
         """
         super().__init__(master, **kwargs)
 
-        ## Stores the current selected COM port in the combobox
+        # Stores the current selected COM port in the combobox
         strvar_current_com_port = customtkinter.StringVar(self)
 
-        ## Generate all comboboxes
+        # Generate all comboboxes
         cbbox_com_ports = self.combobox_com_ports_generate(strvar_current_com_port)
 
-        ## Generate all buttons
-        btn_com_ports = self.button_generate((CBBOX_COM_PORTS_X * 12), CBBOX_COM_PORTS_Y, "Connect")
+        # Generate all buttons
+        btn_com_ports = button_generate(self, (CBBOX_COM_PORTS_X * 12), CBBOX_COM_PORTS_Y, "Connect")
         btn_com_ports.configure(command = lambda : self.button_com_ports_click(
                                                                                 cbbox_com_ports.get(),
                                                                                 serial_funcs.g_list_connected_device_info))
+    
+        btn_manual_mode = button_generate(self, BUTTON_MANUAL_MODE_X, BUTTON_MANUAL_MODE_Y, "Manual Mode")
+        btn_auto_mode   = button_generate(self, BUTTON_AUTO_MODE_X, BUTTON_AUTO_MODE_Y, "Automatic mode")
 
-        btn_direction_up    = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y - 100), "Going Up")
-        btn_direction_up.configure(state = "disabled")
-
-        btn_direction_down  = self.button_generate(BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y + 100), "Going Down")
-        btn_direction_down.configure(state = "disabled")
-
-        btn_direction_left  = self.button_generate((BUTTON_DIRECTION_CENTER_X - 100), BUTTON_DIRECTION_CENTER_Y, "Going Left")
-        btn_direction_left.configure(state = "disabled")
-
-        btn_direction_right = self.button_generate((BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
-        btn_direction_right.configure(state = "disabled")
-
-        btn_start_auto_mode = self.button_generate((BUTTON_DIRECTION_CENTER_X + 200), BUTTON_DIRECTION_CENTER_Y, "Start automatic mode")
-        btn_start_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(serial_funcs.g_list_connected_device_info))
-
-        ## Generate all sliders
-        slider_vertical_speed = self.slider_generate(SLIDER_VERTICAL_SPEED_X, SLIDER_VERTICAL_SPEED_Y, SLIDER_VERTICAL_SPEED_RANGE_MAX)
-        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
-                                                                                                                                slider_value,
-                                                                                                                                self.list_slider_vertical_info,
-                                                                                                                                serial_funcs.g_list_connected_device_info))
-
-        slider_horizontal_speed = self.slider_generate(SLIDER_HORIZONTAL_SPEED_X, SLIDER_HORIZONTAL_SPEED_Y, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
-        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
-                                                                                                                                slider_value,
-                                                                                                                                self.list_slider_horizontal_info,
-                                                                                                                                serial_funcs.g_list_connected_device_info))
-
-        ## Generate all labels
-        label_encoder_vertical_left_value = self.label_generate(LABEL_ENCODER_VERTICAL_LEFT_VALUE_X, LABEL_ENCODER_VERTICAL_LEFT_VALUE_Y, "12345")
-        label_encoder_1_indication = self.label_generate((LABEL_ENCODER_VERTICAL_LEFT_VALUE_X - 200), LABEL_ENCODER_VERTICAL_LEFT_VALUE_Y, "Vertical Motor Position (mm): ")
-
-        label_encoder_vertical_right_value = self.label_generate(LABEL_ENCODER_VERTICAL_LEFT_VALUE_X, LABEL_ENCODER_VERTICAL_LEFT_VALUE_Y + 50, "12345")
-        label_encoder_1_indication = self.label_generate((LABEL_ENCODER_VERTICAL_LEFT_VALUE_X - 200), LABEL_ENCODER_VERTICAL_LEFT_VALUE_Y + 50, "Horizontal Motor Position (mm): ")
-
-        label_vertical_speed_slider = self.label_generate(SLIDER_VERTICAL_SPEED_X, SLIDER_VERTICAL_SPEED_Y - 30, "Vertical Speed (mm/s)")
-        label_horizontal_speed_slider = self.label_generate(SLIDER_HORIZONTAL_SPEED_X, SLIDER_HORIZONTAL_SPEED_Y - 30, "Horizontal speed (mm/s)")
-
-        list_label = [label_encoder_vertical_left_value, label_encoder_vertical_right_value]
+        btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
+        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
 
         ## Start thread to read data rx buffer
         # Continous read of the serial communication RX data
-        thread_rx_data = Thread(target = self.read_rx_buffer, args = (list_label,))
+        thread_rx_data = Thread(target = self.read_rx_buffer, args = (app.home_page_stop_threads_event, ))
         thread_rx_data.start()

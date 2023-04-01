@@ -8,6 +8,8 @@
 # Imports
 import tkinter
 import customtkinter
+import time
+from threading import Event
 
 import common
 import home_page
@@ -17,13 +19,16 @@ import programs_page
 
 # Global constants
 ## The width and height of the App
-APP_WIDTH = 780
-APP_HEIGHT = 520
+APP_WIDTH = 1450
+APP_HEIGHT = 1500
 
 ## Indexes to access different pages
-INDEX_HOME = 0
-INDEX_PROGRAMS = 1
-INDEX_LOGS = 2
+INDEX_HOME      = 0
+INDEX_PROGRAMS  = 1
+INDEX_LOGS      = 2
+
+home_page_stop_threads_event = Event()
+home_page_auto_mode_thread_event = Event()
 
 # Functions
 def frame_selector(frame_to_init):
@@ -38,14 +43,14 @@ def frame_selector(frame_to_init):
     # Bind / Unbind buttons related to the frames
     func_id = None
     if (frame_to_init == 'Home'):
-        func_id = app_window.bind('<KeyPress>', manual_control.key_pressed)
-        app_window.bind('<KeyRelease>', manual_control.key_released)
+        func_id = app_window.bind('<KeyPress>', lambda event, previous_motor =  manual_control.previous_motor_controlled: manual_control.key_pressed(event, previous_motor, home_page.list_buttons_manual_control))
+        app_window.bind('<KeyRelease>', lambda event, previous_motor = manual_control.previous_motor_controlled: manual_control.key_released(event, previous_motor, home_page.list_buttons_manual_control))
     else:
         app_window.unbind('<KeyPress>', func_id)
 
     # Initialize the correct frame
     App.dict_frames[frame_to_init].pack(
-                                        in_         = app_window, 
+                                        in_         = app_window,
                                         side        = tkinter.TOP, 
                                         fill        = tkinter.BOTH,
                                         expand      = True, 
@@ -76,7 +81,7 @@ class App(customtkinter.CTk):
 
         ## Shape and size of the App window
         self.state('zoomed')
-        self.geometry(f"{APP_WIDTH} x {APP_HEIGHT}")
+        self.geometry(f'{APP_WIDTH}x{APP_HEIGHT}') 
 
         ## Closing procedure for App window
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -110,7 +115,7 @@ class App(customtkinter.CTk):
     def on_closing(self):
         """! Procedure on window closing to kill all remaining threads
         """
-        home_page.home_page_stop_threads_event.set()
+        home_page_stop_threads_event.set()
         self.destroy()
 
 if __name__ == "__main__":
