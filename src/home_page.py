@@ -283,6 +283,35 @@ class HomePageFrame(customtkinter.CTkFrame):
         desired_direction_1 = combobox_direction_1.get()
         desired_direction_2 = combobox_direction_2.get()
 
+        # User input checkup
+        # Cannot exceed max value
+        if ((desired_direction_1 == "Up" or desired_direction_1 == "Down") &
+        desired_position > MAX_VERTICAL):
+            message_err_input = CTkMessagebox(title="Error", message="Desired position not possible", icon="cancel")
+        elif ((desired_direction_1 == "Right" or desired_direction_1 == "Left") &
+        desired_position > MAX_HORIZONTAL):
+            message_err_input = CTkMessagebox(title="Error", message="Desired position not possible", icon="cancel")
+
+        # Entry box for desired position cannot be empty
+        if (len(desired_position) == 0):
+            message_err_input = CTkMessagebox(title="Error", message="Missing desired position", icon="cancel")
+
+        # Cannot have incompatible 2nd movement
+        if (desired_direction_1 == "Up" and desired_direction_2 != "Down"):
+            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
+        elif (desired_direction_1 == "Down" and desired_direction_2 != "Up"):
+            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
+        elif (desired_direction_1 == "Right" and desired_direction_2 != "Left"):
+            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
+        elif (desired_direction_1 == "Left" and desired_direction_2 != "Right"):
+            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
+
+        # Combobox cannot be empty
+        if combobox_direction_1.SelectedIndex == -1:
+            message_combo1_no_input = CTkMessagebox(title="Error", message="Missing input for first direction", icon="cancel")
+        elif combobox_direction_2.SelectedIndex == -1:
+            message_combo2_no_input = CTkMessagebox(title="Error", message="Missing input for second direction", icon="cancel")
+
         if (button_submit.cget("text") == "Submit"):
             button_submit.configure(text = "Stop", fg_color = '#EE3B3B')
         else:
