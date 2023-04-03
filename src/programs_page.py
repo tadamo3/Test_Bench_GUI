@@ -231,19 +231,6 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         speed_value_mm_per_sec = int((72000000 / (65000 - 450 * slider_value)) * (1 / 80))
         label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
     
-    def button_back_click(self, btn_back, list):
-        # Destroy all previous components generated beforehand
-        btn_back.place_forget() 
-
-        for i in range(len(list)):
-            list[i].place_forget()
-
-        # Generate button modes 
-        btn_manual_mode = button_generate(self, BUTTON_MANUAL_MODE_X, BUTTON_MANUAL_MODE_Y, "Manual Mode")
-        btn_manual_mode.configure(command=lambda:self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
-
-        btn_auto_mode = button_generate(self, BUTTON_AUTO_MODE_X, BUTTON_AUTO_MODE_Y, "Automatic mode")
-        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
 
     def button_new_program_click(self, button_submit, entry_position, combobox_direction_1, combobox_direction_2, label_reps):
         desired_position = int(entry_position.get())
@@ -305,10 +292,87 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
                 self.flag_is_auto_thread_stopped = True
 
-    def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode):
-        # Destroy the modes buttons
-        button_manual_mode.place_forget()
-        button_auto_mode.place_forget()
+
+    def file_creator(self, name, m1, m2, A, VS, HS, N, refresh, val1, val2):
+        #if (name != ''):
+            with open(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs',name+".txt"), "w") as f:
+                f.write('Movement 1')
+                f.write('\n')
+                f.write(m1)
+                f.write('\n')
+                f.write('Movement 2')
+                f.write('\n')
+                f.write(m2)
+                f.write('\n')
+                f.write('Amplitude (mm)')
+                f.write('\n')
+                f.write(A)
+                f.write('\n')
+                f.write('Vertical speed (mm/s)')
+                f.write('\n')
+                f.write(VS)
+                f.write('\n')
+                f.write('Horizontal speed (mm/s)')
+                f.write('\n')
+                f.write(HS)
+                f.write('\n')
+                f.write('Number of repetitions')
+                f.write('\n')
+                f.write(N)
+                f.write('\n')
+
+                f.close()
+
+                # Refresh list
+                file_list = glob(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs', "*.txt"))
+                for f in file_list:
+                    refresh
+
+                print("Settings saved in "+name+".txt")
+                print(val1)
+                print(val2)
+            
+    def Select(self, list, m1, m2, A, VS, HS, N):
+        with open(list.get(tkinter.ANCHOR), "r") as f:
+            m1.configure(values = f.read(1)) 
+            m2.configure(values = f.read(3)) 
+            A.configure(text = f.read(5)) 
+            VS.configure(slider_value = f.read(7)) 
+            HS.configure(slider_value = f.read(9)) 
+            N.configure(text = f.read(11))
+        
+
+
+
+    def __init__(self, master, **kwargs):
+        """! Initialisation of a Home Page Frame
+        """
+        super().__init__(master, **kwargs)
+
+        # Stores the current selected COM port in the combobox
+        strvar_current_com_port = customtkinter.StringVar(self)
+
+
+        # Generate all buttons    
+        
+        
+        # Generate all entry
+        file_name = entry_generate(self, ENTRY_POS_X, ENTRY_POS_Y, "File name")
+
+        # Listbox
+        programs_list = tkinter.Listbox(
+                                        master  =   self,
+                                        width   =   80, 
+                                        height  =   50)
+        programs_list.place(
+                       relx = 1,
+                       rely = 0,
+                       anchor = tkinter.NE)
+
+        file_list = glob(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs', "*.txt"))
+        for f in file_list:
+            programs_list.insert(0,f)
+
 
         # Generate components
         # Position control input values
@@ -352,125 +416,16 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 70, "Horizontal speed (mm/s)")
 
         label_number_reps_indicator = label_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y, "Number of reps: ")
-        label_number_reps = label_generate(self, LABEL_NUMBER_REPS_X + 100, LABEL_NUMBER_REPS_Y, "")
+        entry_number_reps = entry_generate(self, LABEL_NUMBER_REPS_X + 100, LABEL_NUMBER_REPS_Y, "Enter here")
 
-        btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 700, COMBOBOX_MOVEMENT_1_Y + 75, "Submit")
-        btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement_1, combobox_movement_2, label_number_reps), fg_color = '#66CD00')
+        #btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 700, COMBOBOX_MOVEMENT_1_Y + 75, "Submit")
+        #btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement_1, combobox_movement_2, label_number_reps), fg_color = '#66CD00')
 
-    def file_creator(self, name, m1, m2, A, VS, HS, N):
-        #if (name != ''):
-            with open(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs',name+".txt"), "a") as f:
-                f.write('Movement 1')
-                f.write('\n')
-                f.write(m1)
-                f.write('\n')
-                f.write('Movement 2')
-                f.write('\n')
-                f.write(m2)
-                f.write('\n')
-                f.write('Amplitude')
-                f.write('\n')
-                f.write(A)
-                f.write('\n')
-                f.write('Vertical speed (mm/s)')
-                f.write('\n')
-                f.write(VS)
-                f.write('\n')
-                f.write('Horizontal speed (mm/s)')
-                f.write('\n')
-                f.write(HS)
-                f.write('\n')
-                f.write('Number of repetitions')
-                f.write('\n')
-                f.write(N)
-                f.write('\n')
+        vs_mm = int((72000000 / (65000 - 450 * slider_vertical_speed.get())) * (1 / 80))
+        hs_mm = int((72000000 / (65000 - 450 * slider_horizontal_speed.get())) * (1 / 80))
 
-                f.close()
-
-                print("Settings saved in "+name+".txt")
-
-    def button_generate(self, button_pos_x, button_pos_y, text):
-        button = customtkinter.CTkButton(
-                                            master = self,
-                                            text = text)
+        button_save_settings  = button_generate(self, BUTTON_SETTINGS_X, BUTTON_SETTINGS_Y, "Save settings")
+        button_save_settings.configure(command = lambda : self.file_creator(file_name.get(), combobox_movement_1.get(), combobox_movement_2.get(), entry_desired_position.get(), str(vs_mm), str(hs_mm), entry_number_reps.get(), programs_list.insert(0,f), slider_vertical_speed.get(), slider_horizontal_speed.get()))
         
-        button.place(
-                        x = button_pos_x,
-                        y = button_pos_y)
-
-        return button
-
-
-    def slider_generate(self, slider_pos_x, slider_pos_y, range):
-        slider = customtkinter.CTkSlider(
-                                            master          = self,
-                                            from_           = 0,
-                                            to              = range,
-                                            number_of_steps = range)
-        slider.place(
-                        x = slider_pos_x,
-                        y = slider_pos_y)
-
-        return slider
-
-
-    def label_generate(self, label_pos_x, label_pos_y, text):
-        label = customtkinter.CTkLabel(
-                                        master          = self,
-                                        text            = text,
-                                        corner_radius   = 8)
-        
-        label.place(
-                    x = label_pos_x,
-                    y = label_pos_y)
-        
-        label.text = text
-
-        return label
-
-    def __init__(self, master, **kwargs):
-        """! Initialisation of a Home Page Frame
-        """
-        super().__init__(master, **kwargs)
-
-        # Stores the current selected COM port in the combobox
-        strvar_current_com_port = customtkinter.StringVar(self)
-
-
-        # Generate all buttons    
-        btn_manual_mode = button_generate(self, BUTTON_MANUAL_MODE_X, BUTTON_MANUAL_MODE_Y, "Manual Mode")
-        btn_auto_mode   = button_generate(self, BUTTON_AUTO_MODE_X, BUTTON_AUTO_MODE_Y, "Automatic mode")
-
-        btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
-        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
-
-        button_save_settings = customtkinter.CTkButton(
-                                            master = self,
-                                            text = "Save point A")
-        button_save_settings.configure(command = lambda : self.file_creator(file_name.get(), 1, 2, 3, 4, 5, 6))
-        button_save_settings.place(
-                        x = BUTTON_SETTINGS_X,
-                        y = BUTTON_SETTINGS_Y)
-
-        # Generate all entry
-        file_name = customtkinter.CTkEntry(
-                                        master = self,
-                                        placeholder_text="File name")
-        file_name.place(
-                    x = ENTRY_POS_X, 
-                    y = ENTRY_POS_Y, 
-                    anchor = tkinter.CENTER)
-
-        # Listbox
-        programs_list = tkinter.Listbox(
-                                        master  =   self,
-                                        width   =   80, 
-                                        height  =   100)
-        programs_list.place(
-                       relx = 1,
-                       rely = 0,
-                       anchor = tkinter.NE)
-
-        file_list = glob(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs', "*.txt"))
-        for f in file_list:
-            programs_list.insert(0,f)
+        button_select_settings  = button_generate(self, BUTTON_SETTINGS_X, BUTTON_SETTINGS_Y + 300, "Select settings")
+        button_select_settings.configure(command = lambda : self.Select(programs_list, combobox_movement_1, combobox_movement_2, entry_desired_position, slider_vertical_speed, slider_horizontal_speed, entry_number_reps))
