@@ -24,6 +24,7 @@ ID_ENCODER_HORIZONTAL       = 3
 ID_MOTOR_VERTICAL_LEFT      = 4
 ID_MOTOR_VERTICAL_RIGHT     = 5
 ID_MOTOR_HORIZONTAL         = 6
+ID_MOTOR_ADAPT              = 7
 
 ## Commands of Test Bench comoponents - Must be the same as the ones found in Serial_Communication/serial_com.h
 COMMAND_RESERVED                    = 0
@@ -34,6 +35,9 @@ COMMAND_MOTOR_HORIZONTAL_RIGHT      = 4
 COMMAND_MOTOR_HORIZONTAL_LEFT       = 5
 COMMAND_MOTOR_HORIZONTAL_STOP       = 6
 COMMAND_MOTOR_CHANGE_SPEED          = 7
+COMMAND_MOTOR_ADAPT_UP              = 8
+COMMAND_MOTOR_ADAPT_DOWN            = 9
+COMMAND_MOTOR_ADAPT_STOP            = 10
 
 ## Motor possible states
 MOTOR_STATE_RESERVED            = 0
@@ -46,6 +50,9 @@ MOTOR_STATE_HORIZONTAL_STOP     = 6
 MOTOR_STATE_AUTO_IN_TRAJ        = 7
 MOTOR_STATE_AUTO_END_OF_TRAJ    = 8
 MOTOR_STATE_CHANGE_PARAMS       = 9
+MOTOR_STATE_ADAPT_UP            = 10
+MOTOR_STATE_ADAPT_DOWN          = 11
+MOTOR_STATE_ADAPT_STOP          = 12
 
 ## Motor possible faults
 MOTOR_FAULT_NONE         = 0
@@ -131,13 +138,11 @@ def receive_serial_data(list_message_info, list_com_device_info):
         list_message_info[INDEX_STATUS_MOVEMENT_MOTOR]  = ((rx_buffer[0] & 0x0000FF00) >> 8)
         list_message_info[INDEX_STATUS_MOTOR]           = (rx_buffer[0] & 0x000000FF)
         list_message_info[INDEX_MOTOR_POSITION]         = rx_buffer[1]
-        """
         print(
                 "ID: "                  + str(list_message_info[INDEX_ID]) +
                 " Status movement: "     + str(list_message_info[INDEX_STATUS_MOVEMENT_MOTOR]) +
                 " State: "               + str(list_message_info[INDEX_STATUS_MOTOR])
             )
-        """
         
         logs = open(path_logs, 'a')
         logs.write(str(list_message_info[INDEX_MOTOR_POSITION]))
@@ -159,7 +164,8 @@ def transmit_serial_data(id, command, mode, data, list_com_device_info):
 
         bytes_to_send = message_to_send.to_bytes(NUM_BYTES_TO_SEND, ENDIANNESS)
         list_com_device_info[0].write(bytes_to_send)
-
-        #print("Message sent: ", bytes_to_send.hex())
-    #else:
-        #print("Could not send data")
+"""
+        print("Message sent: ", bytes_to_send.hex())
+    else:
+        print("Could not send data")
+        """
