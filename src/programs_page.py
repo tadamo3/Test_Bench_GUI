@@ -32,25 +32,16 @@ BUTTON_DIRECTION_CENTER_X   = 400
 BUTTON_DIRECTION_CENTER_Y   = 250
 
 ## Info about the vertical speed slider
-SLIDER_VERTICAL_SPEED_X                 = BUTTON_DIRECTION_CENTER_X + 350
-SLIDER_VERTICAL_SPEED_Y                 = BUTTON_DIRECTION_CENTER_Y - 50
+SLIDER_VERTICAL_SPEED_X                 = 300
+SLIDER_VERTICAL_SPEED_Y                 = 300
 SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX  = 0
 SLIDER_VERTICAL_SPEED_RANGE_MAX         = 100
 
 ## Info about the horizontal speed slider
-SLIDER_HORIZONTAL_SPEED_X                   = BUTTON_DIRECTION_CENTER_X + 350
-SLIDER_HORIZONTAL_SPEED_Y                   = BUTTON_DIRECTION_CENTER_Y + 50
+SLIDER_HORIZONTAL_SPEED_X                   = 300
+SLIDER_HORIZONTAL_SPEED_Y                   = 400
 SLIDER_HORIZONTAL_SPEED_PREV_VALUE_INDEX    = 0
 SLIDER_HORIZONTAL_SPEED_RANGE_MAX           = 100
-
-BUTTON_MANUAL_MODE_X        = 20
-BUTTON_MANUAL_MODE_Y        = 100
-BUTTON_AUTO_MODE_X          = 20 
-BUTTON_AUTO_MODE_Y          = BUTTON_MANUAL_MODE_Y + 100
-
-## Info about the Return button
-BUTTON_BACK_VALUE_X = 1000
-BUTTON_BACK_VALUE_Y = 60
 
 ## Info about the entry textbox for position control
 ASK_ENTRY_VALUE_X = 200
@@ -59,8 +50,8 @@ ASK_ENTRY_VALUE_Y = 300
 COMBOBOX_MOVEMENT_1_X = 100
 COMBOBOX_MOVEMENT_1_Y = 200
 
-LABEL_NUMBER_REPS_X = COMBOBOX_MOVEMENT_1_X + 700
-LABEL_NUMBER_REPS_Y = COMBOBOX_MOVEMENT_1_Y + 150
+LABEL_NUMBER_REPS_X = 200
+LABEL_NUMBER_REPS_Y = 500
 
 ## Maximal values we can travel to
 MAX_HORIZONTAL  = 30
@@ -79,12 +70,15 @@ FRAME_POS_X = 780
 FRAME_POS_Y = 0
 
 ## Name of file
-ENTRY_POS_X = 500
-ENTRY_POS_Y = 125
+ENTRY_POS_X = 300
+ENTRY_POS_Y = 200
 
 ## Save settings file positon
-BUTTON_SETTINGS_X          = 500
-BUTTON_SETTINGS_Y          = 200
+BUTTON_SETTINGS_X          = 100
+BUTTON_SETTINGS_Y          = 100
+
+BUTTON_SELECT_X            = 250
+BUTTON_SELECT_Y            = 100
 
 
 NP_VALUE_X       = 50
@@ -293,7 +287,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                 self.flag_is_auto_thread_stopped = True
 
 
-    def file_creator(self, name, m1, m2, A, VS, HS, N, refresh, val1, val2):
+    def file_creator(self, name, m1, m2, A, VS, HS, N, refresh):
         #if (name != ''):
             with open(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs',name+".txt"), "w") as f:
                 f.write('Movement 1')
@@ -329,17 +323,17 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                     refresh
 
                 print("Settings saved in "+name+".txt")
-                print(val1)
-                print(val2)
+
             
     def Select(self, list, m1, m2, A, VS, HS, N):
         with open(list.get(tkinter.ANCHOR), "r") as f:
-            m1.configure(values = f.read(1)) 
-            m2.configure(values = f.read(3)) 
-            A.configure(text = f.read(5)) 
-            VS.configure(slider_value = f.read(7)) 
-            HS.configure(slider_value = f.read(9)) 
-            N.configure(text = f.read(11))
+            m1.configure(values = f.readlines(1)) 
+            m2.configure(values = f.readlines(3)) 
+            A = f.readlines(5)
+            VS = f.readlines(7)
+            HS = f.readlines(9)
+            N = f.readlines(11)
+
         
 
 
@@ -388,10 +382,10 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                                         values = self.list_movement_entries, 
                                                         dynamic_resizing = False)
         combobox_movement_2.set("Choose 2nd movement")
-        combobox_movement_2.place(x = COMBOBOX_MOVEMENT_1_X, y = COMBOBOX_MOVEMENT_1_Y + 150)
+        combobox_movement_2.place(x = COMBOBOX_MOVEMENT_1_X, y = COMBOBOX_MOVEMENT_1_Y + 100)
 
-        entry_desired_position = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y, "Enter here")
-        label_desired_position = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y - 30, "Amplitude (mm)")
+        entry_desired_position = entry_generate(self, COMBOBOX_MOVEMENT_1_X, COMBOBOX_MOVEMENT_1_Y + 200, "Enter here")
+        label_desired_position = label_generate(self, COMBOBOX_MOVEMENT_1_X, COMBOBOX_MOVEMENT_1_Y + 170, "Amplitude (mm)")
 
         label_visualize_vertical_speed      = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y - 5, "20 mm/s")
         label_visualize_horizontal_speed    = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y + 95, "20 mm/s")
@@ -416,16 +410,16 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 70, "Horizontal speed (mm/s)")
 
         label_number_reps_indicator = label_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y, "Number of reps: ")
-        entry_number_reps = entry_generate(self, LABEL_NUMBER_REPS_X + 100, LABEL_NUMBER_REPS_Y, "Enter here")
+        entry_number_reps = entry_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y + 30, "Enter here")
 
         #btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 700, COMBOBOX_MOVEMENT_1_Y + 75, "Submit")
         #btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement_1, combobox_movement_2, label_number_reps), fg_color = '#66CD00')
 
-        vs_mm = int((72000000 / (65000 - 450 * slider_vertical_speed.get())) * (1 / 80))
-        hs_mm = int((72000000 / (65000 - 450 * slider_horizontal_speed.get())) * (1 / 80))
+        vs_mm = (72000000 / (65000 - 450 * slider_vertical_speed.get())) * (1 / 80)
+        hs_mm = (72000000 / (65000 - 450 * slider_horizontal_speed .get())) * (1 / 80)
 
         button_save_settings  = button_generate(self, BUTTON_SETTINGS_X, BUTTON_SETTINGS_Y, "Save settings")
-        button_save_settings.configure(command = lambda : self.file_creator(file_name.get(), combobox_movement_1.get(), combobox_movement_2.get(), entry_desired_position.get(), str(vs_mm), str(hs_mm), entry_number_reps.get(), programs_list.insert(0,f), slider_vertical_speed.get(), slider_horizontal_speed.get()))
+        button_save_settings.configure(command = lambda : self.file_creator(file_name.get(), combobox_movement_1.get(), combobox_movement_2.get(), entry_desired_position.get(), str(vs_mm), str(hs_mm), entry_number_reps.get(), programs_list.insert(0,f)))
         
-        button_select_settings  = button_generate(self, BUTTON_SETTINGS_X, BUTTON_SETTINGS_Y + 300, "Select settings")
+        button_select_settings  = button_generate(self, BUTTON_SELECT_X, BUTTON_SELECT_Y, "Select settings")
         button_select_settings.configure(command = lambda : self.Select(programs_list, combobox_movement_1, combobox_movement_2, entry_desired_position, slider_vertical_speed, slider_horizontal_speed, entry_number_reps))
