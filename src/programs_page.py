@@ -27,7 +27,6 @@ from glob import glob
 HOME_PAGE_WIDTH     = 1450
 HOME_PAGE_HEIGHT    = 1500
 
-
 BUTTON_DIRECTION_CENTER_X   = 400
 BUTTON_DIRECTION_CENTER_Y   = 250
 
@@ -87,11 +86,9 @@ NP_VALUE_Y       = 50
 BUTTON_DIRECTION_CENTER_X = 200
 BUTTON_DIRECTION_CENTER_Y = 250
 
-
-
-
 ## Global variables
 list_buttons_manual_control = []
+path_to_programs_folder = '..\Test_Bench_GUI\programs'
 
 ## Classes
 class ProgramsPageFrame(customtkinter.CTkFrame):
@@ -286,10 +283,9 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
                 self.flag_is_auto_thread_stopped = True
 
-
-    def file_creator(self, name, m1, m2, A, VS, HS, N, refresh):
+    def file_creator(self, name, m1, m2, A, VS, HS, N, current_programs_list):
         #if (name != ''):
-            with open(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs',name+".txt"), "w") as f:
+            with open(path_to_programs_folder + '\\' + name + '.txt', "w") as f:
                 f.write('Movement 1')
                 f.write('\n')
                 f.write(m1)
@@ -318,13 +314,15 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                 f.close()
 
                 # Refresh list
-                file_list = glob(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs', "*.txt"))
-                for f in file_list:
-                    refresh
+                current_programs_list = []
+                file_list = glob(path_to_programs_folder + '\*.txt')
+                if (len(file_list) != 0):
+                    for f in file_list:
+                        name_file_to_show = f.replace(path_to_programs_folder + '\\', '')
+                        current_programs_list.insert(0, name_file_to_show)
 
                 print("Settings saved in "+name+".txt")
 
-            
     def Select(self, list, m1, m2, A, VS, HS, N):
         with open(list.get(tkinter.ANCHOR), "r") as f:
             m1.configure(values = f.readlines(1)) 
@@ -334,10 +332,6 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
             HS = f.readlines(9)
             N = f.readlines(11)
 
-        
-
-
-
     def __init__(self, master, **kwargs):
         """! Initialisation of a Home Page Frame
         """
@@ -345,29 +339,27 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
         # Stores the current selected COM port in the combobox
         strvar_current_com_port = customtkinter.StringVar(self)
-
-
-        # Generate all buttons    
-        
         
         # Generate all entry
         file_name = entry_generate(self, ENTRY_POS_X, ENTRY_POS_Y, "File name")
 
-        # Listbox
+        # Generate ListBox object
         programs_list = tkinter.Listbox(
                                         master  =   self,
                                         width   =   80, 
                                         height  =   50)
         programs_list.place(
-                       relx = 1,
-                       rely = 0,
-                       anchor = tkinter.NE)
+                            relx = 1,
+                            rely = 0,
+                            anchor = tkinter.NE)
 
-        file_list = glob(os.path.join(os.path.expanduser('~'),'Documents\Zimmer Programs', "*.txt"))
-        for f in file_list:
-            programs_list.insert(0,f)
-
-
+        # Fill up scrollable list with existing test configs
+        file_list = glob(path_to_programs_folder + '\*.txt')
+        if (len(file_list) != 0):
+            for f in file_list:
+                name_file_to_show = f.replace(path_to_programs_folder + '\\', '')
+                programs_list.insert(0, name_file_to_show)
+            
         # Generate components
         # Position control input values
         combobox_movement_1 = customtkinter.CTkOptionMenu(
@@ -412,14 +404,16 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         label_number_reps_indicator = label_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y, "Number of reps: ")
         entry_number_reps = entry_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y + 30, "Enter here")
 
-        #btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 700, COMBOBOX_MOVEMENT_1_Y + 75, "Submit")
-        #btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement_1, combobox_movement_2, label_number_reps), fg_color = '#66CD00')
-
-        vs_mm = (72000000 / (65000 - 450 * slider_vertical_speed.get())) * (1 / 80)
-        hs_mm = (72000000 / (65000 - 450 * slider_horizontal_speed .get())) * (1 / 80)
-
         button_save_settings  = button_generate(self, BUTTON_SETTINGS_X, BUTTON_SETTINGS_Y, "Save settings")
-        button_save_settings.configure(command = lambda : self.file_creator(file_name.get(), combobox_movement_1.get(), combobox_movement_2.get(), entry_desired_position.get(), str(vs_mm), str(hs_mm), entry_number_reps.get(), programs_list.insert(0,f)))
+        button_save_settings.configure(command = lambda : self.file_creator(
+                                                                            file_name.get(), 
+                                                                            combobox_movement_1.get(), 
+                                                                            combobox_movement_2.get(), 
+                                                                            entry_desired_position.get(), 
+                                                                            str(int(slider_vertical_speed.get())), 
+                                                                            str(int(slider_horizontal_speed.get())), 
+                                                                            entry_number_reps.get(), 
+                                                                            programs_list))
         
         button_select_settings  = button_generate(self, BUTTON_SELECT_X, BUTTON_SELECT_Y, "Select settings")
         button_select_settings.configure(command = lambda : self.Select(programs_list, combobox_movement_1, combobox_movement_2, entry_desired_position, slider_vertical_speed, slider_horizontal_speed, entry_number_reps))
