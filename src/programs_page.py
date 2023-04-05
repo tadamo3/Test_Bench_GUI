@@ -22,6 +22,8 @@ from common import button_generate, entry_generate, label_generate, combobox_gen
 import os
 from glob import glob
 
+import numpy as np
+
 ## Global constants
 ## The width and height of the home page
 HOME_PAGE_WIDTH     = 1450
@@ -31,14 +33,14 @@ BUTTON_DIRECTION_CENTER_X   = 400
 BUTTON_DIRECTION_CENTER_Y   = 250
 
 ## Info about the vertical speed slider
-SLIDER_VERTICAL_SPEED_X                 = 300
-SLIDER_VERTICAL_SPEED_Y                 = 300
+SLIDER_VERTICAL_SPEED_X                 = 200
+SLIDER_VERTICAL_SPEED_Y                 = 400
 SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX  = 0
 SLIDER_VERTICAL_SPEED_RANGE_MAX         = 100
 
 ## Info about the horizontal speed slider
-SLIDER_HORIZONTAL_SPEED_X                   = 300
-SLIDER_HORIZONTAL_SPEED_Y                   = 400
+SLIDER_HORIZONTAL_SPEED_X                   = 200
+SLIDER_HORIZONTAL_SPEED_Y                   = 500
 SLIDER_HORIZONTAL_SPEED_PREV_VALUE_INDEX    = 0
 SLIDER_HORIZONTAL_SPEED_RANGE_MAX           = 100
 
@@ -49,8 +51,8 @@ ASK_ENTRY_VALUE_Y = 300
 COMBOBOX_MOVEMENT_1_X = 100
 COMBOBOX_MOVEMENT_1_Y = 200
 
-LABEL_NUMBER_REPS_X = 200
-LABEL_NUMBER_REPS_Y = 500
+LABEL_NUMBER_REPS_X = 100
+LABEL_NUMBER_REPS_Y = 450
 
 ## Maximal values we can travel to
 MAX_HORIZONTAL  = 30
@@ -88,7 +90,7 @@ BUTTON_DIRECTION_CENTER_Y = 250
 
 ## Global variables
 list_buttons_manual_control = []
-path_to_programs_folder = '..\Test_Bench_GUI\programs'
+path_to_programs_folder = '..\\Test_Bench_GUI\\programs'
 
 ## Classes
 class ProgramsPageFrame(customtkinter.CTkFrame):
@@ -283,54 +285,74 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
                 self.flag_is_auto_thread_stopped = True
 
-    def file_creator(self, name, m1, m2, A, VS, HS, N, current_programs_list):
-        #if (name != ''):
-            with open(path_to_programs_folder + '\\' + name + '.txt', "w") as f:
-                f.write('Movement 1')
-                f.write('\n')
-                f.write(m1)
-                f.write('\n')
-                f.write('Movement 2')
-                f.write('\n')
-                f.write(m2)
-                f.write('\n')
-                f.write('Amplitude (mm)')
-                f.write('\n')
-                f.write(A)
-                f.write('\n')
-                f.write('Vertical speed (mm/s)')
-                f.write('\n')
-                f.write(VS)
-                f.write('\n')
-                f.write('Horizontal speed (mm/s)')
-                f.write('\n')
-                f.write(HS)
-                f.write('\n')
-                f.write('Number of repetitions')
-                f.write('\n')
-                f.write(N)
-                f.write('\n')
+    def file_creator(self, name, m1, m2, A, VS, HS, N, current_programs_list, list_of_prog):
+        complete_path_new_file = path_to_programs_folder + '\\' + name + '.txt'
+        name = name.replace(path_to_programs_folder + '\\', '')
+        name_file_to_show = name + ".txt"
+        VS = round((72000000 / (65000 - 450 * VS)) * (1 / 80))
+        HS = round((72000000 / (65000 - 450 * HS)) * (1 / 80))
+        with open(complete_path_new_file, "w") as f:
+            f.write('Movement 1')
+            f.write('\n')
+            f.write(m1)
+            f.write('\n')
+            f.write('Movement 2')
+            f.write('\n')
+            f.write(m2)
+            f.write('\n')
+            f.write('Amplitude (mm)')
+            f.write('\n')
+            f.write(A)
+            f.write('\n')
+            f.write('Vertical speed (mm/s)')
+            f.write('\n')
+            f.write(str(VS))
+            f.write('\n')
+            f.write('Horizontal speed (mm/s)')
+            f.write('\n')
+            f.write(str(HS))
+            f.write('\n')
+            f.write('Number of repetitions')
+            f.write('\n')
+            f.write(N)
+            f.write('\n')
 
-                f.close()
+            f.close()
+        
+        if complete_path_new_file not in list_of_prog:
+            list_of_prog.append(complete_path_new_file)
+            current_programs_list.insert(0, name_file_to_show)
+        print("Settings saved in "+name_file_to_show)
 
-                # Refresh list
-                current_programs_list = []
-                file_list = glob(path_to_programs_folder + '\*.txt')
-                if (len(file_list) != 0):
-                    for f in file_list:
-                        name_file_to_show = f.replace(path_to_programs_folder + '\\', '')
-                        current_programs_list.insert(0, name_file_to_show)
+    def Select(self, list, m1, m2, A, LVS, VS, LHS, HS, N, n):
+        name = list.get(tkinter.ANCHOR)
+        name = name.replace('.txt', '')
+        print(path_to_programs_folder + '\\' + list.get(tkinter.ANCHOR))
+        values = []
+        with open((path_to_programs_folder + '\\' + list.get(tkinter.ANCHOR)), "r") as f:
+            for i in f:
+                v = f.readline()
+                v1 = v.split("\n")
+                values.append(v1[0])
+            
+            vs_mm_s = round(72000000 / (65000 - 450 * float(values[3]))) * (1 / 80)
+            hs_mm_s = round(72000000 / (65000 - 450 * float(values[4]))) * (1 / 80)
 
-                print("Settings saved in "+name+".txt")
+            m1.set(values[0]) 
+            m2.set(values[1]) 
+            self.cleartext(A)
+            A.insert(0, values[2])
+            LVS.configure(text = (str(vs_mm_s) + " mm/s"))
+            VS.configure(float(values[3]))
+            LHS.configure(text = (str(hs_mm_s) + " mm/s"))
+            HS.configure(float(values[4]))
+            self.cleartext(N)
+            N.insert(0, values[5])
+            self.cleartext(n)
+            n.insert(0, name)
 
-    def Select(self, list, m1, m2, A, VS, HS, N):
-        with open(list.get(tkinter.ANCHOR), "r") as f:
-            m1.configure(values = f.readlines(1)) 
-            m2.configure(values = f.readlines(3)) 
-            A = f.readlines(5)
-            VS = f.readlines(7)
-            HS = f.readlines(9)
-            N = f.readlines(11)
+    def cleartext(self, var):
+        var.delete(0,"end")
 
     def __init__(self, master, **kwargs):
         """! Initialisation of a Home Page Frame
@@ -410,10 +432,11 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                                                             combobox_movement_1.get(), 
                                                                             combobox_movement_2.get(), 
                                                                             entry_desired_position.get(), 
-                                                                            str(int(slider_vertical_speed.get())), 
-                                                                            str(int(slider_horizontal_speed.get())), 
+                                                                            slider_vertical_speed.get(), 
+                                                                            slider_horizontal_speed.get(), 
                                                                             entry_number_reps.get(), 
-                                                                            programs_list))
+                                                                            programs_list,
+                                                                            file_list))
         
         button_select_settings  = button_generate(self, BUTTON_SELECT_X, BUTTON_SELECT_Y, "Select settings")
-        button_select_settings.configure(command = lambda : self.Select(programs_list, combobox_movement_1, combobox_movement_2, entry_desired_position, slider_vertical_speed, slider_horizontal_speed, entry_number_reps))
+        button_select_settings.configure(command = lambda : self.Select(programs_list, combobox_movement_1, combobox_movement_2, entry_desired_position, label_visualize_vertical_speed, slider_vertical_speed, label_visualize_horizontal_speed, slider_vertical_speed, entry_number_reps, file_name))
