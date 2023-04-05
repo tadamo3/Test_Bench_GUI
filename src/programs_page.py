@@ -158,39 +158,39 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                                     position_to_reach,
                                                     serial_funcs.g_list_connected_device_info)
 
-        while (stop_event.is_set() != True):
-            self.counter_repetitions = self.counter_repetitions + 1
-            while (serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_IN_TRAJ):
-                pass
+        #while (stop_event.is_set() != True):
+        #    self.counter_repetitions = self.counter_repetitions + 1
+        #    while (serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_IN_TRAJ):
+        #        pass
 
-            if ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 1)):
-                serial_funcs.transmit_serial_data(
-                                                    id,
-                                                    command_b,
-                                                    serial_funcs.MODE_POSITION_CONTROL,
-                                                    position_to_reach,
-                                                    serial_funcs.g_list_connected_device_info)
+        #   if ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 1)):
+        #        serial_funcs.transmit_serial_data(
+        #                                            id,
+        #                                            command_b,
+        #                                            serial_funcs.MODE_POSITION_CONTROL,
+        #                                            position_to_reach,
+        #                                            serial_funcs.g_list_connected_device_info)
 
-                self.current_checkpoint_to_reach = 0
+        #       self.current_checkpoint_to_reach = 0
 
-            elif ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 0)):
-                serial_funcs.transmit_serial_data(
-                                                    id,
-                                                    command_a,
-                                                    serial_funcs.MODE_POSITION_CONTROL,
-                                                    position_to_reach,
-                                                    serial_funcs.g_list_connected_device_info)
+        #    elif ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 0)):
+        #        serial_funcs.transmit_serial_data(
+        #                                            id,
+        #                                            command_a,
+        #                                            serial_funcs.MODE_POSITION_CONTROL,
+        #                                            position_to_reach,
+        #                                            serial_funcs.g_list_connected_device_info)
 
-                self.current_checkpoint_to_reach = 1
-                self.counter_repetitions = self.counter_repetitions + 1
+        #        self.current_checkpoint_to_reach = 1
+        #        self.counter_repetitions = self.counter_repetitions + 1
 
-            label_reps.configure(text = str(self.counter_repetitions))
+        #    label_reps.configure(text = str(self.counter_repetitions))
 
-            time.sleep(0.1)
+        #    time.sleep(0.1)
 
-        if (stop_event.is_set() == True):
-            self.counter_repetitions = -99
-            label_reps.configure(text = str(self.counter_repetitions))
+        #if (stop_event.is_set() == True):
+        #    self.counter_repetitions = -99
+        #    label_reps.configure(text = str(self.counter_repetitions))
 
 
     def slider_speed_callback(self, slider_value, list_slider_info, slider_type, label_slider, list_com_device_info):
@@ -225,8 +225,9 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
     
 
-    def button_new_program_click(self, button_submit, entry_position, combobox_direction_1, combobox_direction_2, label_reps):
-        desired_position = int(entry_position.get())
+    def button_submit_click(self, button_submit, entry_position, combobox_direction_1, combobox_direction_2, label_reps):
+        dp_str = entry_position.get()
+        desired_position = int(dp_str)
         desired_direction_1 = combobox_direction_1.get()
         desired_direction_2 = combobox_direction_2.get()
 
@@ -240,7 +241,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
             message_err_input = CTkMessagebox(title="Error", message="Desired position not possible", icon="cancel")
 
         # Entry box for desired position cannot be empty
-        if (len(desired_position) == 0):
+        if (dp_str == ''):
             message_err_input = CTkMessagebox(title="Error", message="Missing desired position", icon="cancel")
 
         # Cannot have incompatible 2nd movement
@@ -254,9 +255,9 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
             message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
 
         # Combobox cannot be empty
-        if combobox_direction_1.SelectedIndex == -1:
+        if combobox_direction_1.get() == '':
             message_combo1_no_input = CTkMessagebox(title="Error", message="Missing input for first direction", icon="cancel")
-        elif combobox_direction_2.SelectedIndex == -1:
+        elif combobox_direction_2.get() == '':
             message_combo2_no_input = CTkMessagebox(title="Error", message="Missing input for second direction", icon="cancel")
 
         if (button_submit.cget("text") == "Submit"):
@@ -440,3 +441,6 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         
         button_select_settings  = button_generate(self, BUTTON_SELECT_X, BUTTON_SELECT_Y, "Select settings")
         button_select_settings.configure(command = lambda : self.Select(programs_list, combobox_movement_1, combobox_movement_2, entry_desired_position, label_visualize_vertical_speed, slider_vertical_speed, label_visualize_horizontal_speed, slider_vertical_speed, entry_number_reps, file_name))
+
+        btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 700, COMBOBOX_MOVEMENT_1_Y + 75, "Submit")
+        btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement_1, combobox_movement_2, label_number_reps_indicator), fg_color = '#66CD00')
