@@ -117,7 +117,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                 serial_funcs.g_list_message_info,
                                                 serial_funcs.g_list_connected_device_info)
 
-            time.sleep(0.01)
+            time.sleep(0.05)
 
     def determine_trajectory_parameters(self, direction_a, direction_b):
         command_a = serial_funcs.COMMAND_RESERVED
@@ -170,10 +170,6 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                     serial_funcs.g_list_connected_device_info)
 
         while (stop_event.is_set() != True):
-            self.counter_repetitions = self.counter_repetitions + 1
-            while (serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_IN_TRAJ):
-                pass
-
             if ((serial_funcs.g_list_message_info[serial_funcs.INDEX_STATUS_MOTOR] == serial_funcs.MOTOR_STATE_AUTO_END_OF_TRAJ) and (self.current_checkpoint_to_reach == 1)):
                 serial_funcs.transmit_serial_data(
                                                     id,
@@ -197,11 +193,7 @@ class HomePageFrame(customtkinter.CTkFrame):
 
             label_reps.configure(text = str(self.counter_repetitions))
 
-            time.sleep(0.1)
-
-        if (stop_event.is_set() == True):
-            self.counter_repetitions = -99
-            label_reps.configure(text = str(self.counter_repetitions))
+            time.sleep(1)
 
     def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
         """! Creates a combobox to list out all COM ports currently used by computer
