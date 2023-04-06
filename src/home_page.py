@@ -71,8 +71,9 @@ LABEL_NUMBER_REPS_X = COMBOBOX_MOVEMENT_1_X + 700
 LABEL_NUMBER_REPS_Y = COMBOBOX_MOVEMENT_1_Y + 150
 
 ## Maximal values we can travel to
-MAX_HORIZONTAL  = 30
-MAX_VERTICAL    = 30
+MAX_HORIZONTAL  = 400
+MAX_VERTICAL    = 400
+MAX_SCREW       = 50
 
 CHECKPOINT_A = 0
 CHECKPOINT_B = 1
@@ -84,6 +85,7 @@ INDEX_MOVEMENT_LEFT     = 3
 
 ## Global variables
 list_buttons_manual_control = []
+list_movement_entries = ["Up to down", "Down to up", "Left to right", "Right to left","Screw up to screw down", "Screw down to screw up"]
 
 ## Classes
 class HomePageFrame(customtkinter.CTkFrame):
@@ -93,7 +95,8 @@ class HomePageFrame(customtkinter.CTkFrame):
     list_slider_vertical_info = [0]
     list_slider_horizontal_info = [0]
     current_checkpoint_to_reach = 1
-    list_movement_entries = ["Up", "Down", "Right", "Left"]
+    list_movement_entries = ["Up to down", "Down to up", "Right to left", "Left to right","Screw up to screw down", "Screw down to screw up"]
+
 
     flag_is_auto_thread_stopped = False
     flag_auto_thread_created_once = False
@@ -278,65 +281,61 @@ class HomePageFrame(customtkinter.CTkFrame):
         btn_auto_mode = button_generate(self, BUTTON_AUTO_MODE_X, BUTTON_AUTO_MODE_Y, "Automatic mode")
         btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
 
-    def button_submit_click(self, button_submit, entry_position, combobox_direction_1, combobox_direction_2, label_reps):
+    def button_submit_click(self, button_submit, entry_position, combobox_direction, label_reps):
+        # Get user input
         desired_position = int(entry_position.get())
-        desired_direction_1 = combobox_direction_1.get()
-        desired_direction_2 = combobox_direction_2.get()
+        desired_direction = combobox_direction.get()
 
-        # User input checkup
+        error_msg = None
+
+
         # Cannot exceed max value
-        if ((desired_direction_1 == "Up" or desired_direction_1 == "Down") &
-        desired_position > MAX_VERTICAL):
-            message_err_input = CTkMessagebox(title="Error", message="Desired position not possible", icon="cancel")
-        elif ((desired_direction_1 == "Right" or desired_direction_1 == "Left") &
-        desired_position > MAX_HORIZONTAL):
-            message_err_input = CTkMessagebox(title="Error", message="Desired position not possible", icon="cancel")
+        # For any vertical movement 
+        if desired_direction == list_movement_entries[0] or desired_direction == list_movement_entries[1]:
+            if desired_position > MAX_VERTICAL: 
+                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
+            
+        # For any horizontal movement
+        if desired_direction == list_movement_entries[2] or desired_direction == list_movement_entries[3]:
+            if desired_position > MAX_HORIZONTAL: 
+                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
 
-        # Entry box for desired position cannot be empty
-        if (len(desired_position) == 0):
-            message_err_input = CTkMessagebox(title="Error", message="Missing desired position", icon="cancel")
-
-        # Cannot have incompatible 2nd movement
-        if (desired_direction_1 == "Up" and desired_direction_2 != "Down"):
-            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
-        elif (desired_direction_1 == "Down" and desired_direction_2 != "Up"):
-            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
-        elif (desired_direction_1 == "Right" and desired_direction_2 != "Left"):
-            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
-        elif (desired_direction_1 == "Left" and desired_direction_2 != "Right"):
-            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
+        # For any screwing movement
+        if desired_direction == list_movement_entries[4] or desired_direction == list_movement_entries[5]:
+            if desired_position > MAX_SCREW: 
+                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
 
         # Combobox cannot be empty
-        if combobox_direction_1.SelectedIndex == -1:
-            message_combo1_no_input = CTkMessagebox(title="Error", message="Missing input for first direction", icon="cancel")
-        elif combobox_direction_2.SelectedIndex == -1:
-            message_combo2_no_input = CTkMessagebox(title="Error", message="Missing input for second direction", icon="cancel")
+        if desired_direction == "Choose movement":
+            error_msg = CTkMessagebox(title="Error", message="Missing desired direction", icon="cancel")
+        
+        if (error_msg == None):
+            if (button_submit.cget("text") == "Submit"): 
+                button_submit.configure(text = "Stop", fg_color = '#EE3B3B')
+            else:
+                button_submit.configure(text = "Submit", fg_color = '#66CD00')
 
-        if (button_submit.cget("text") == "Submit"):
-            button_submit.configure(text = "Stop", fg_color = '#EE3B3B')
-        else:
-            button_submit.configure(text = "Submit", fg_color = '#66CD00')
+            # Default thread
+            thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction, label_reps, app.home_page_auto_mode_thread_event, ))
 
-        # Default thread
-        thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction_1, desired_direction_2, label_reps, app.home_page_auto_mode_thread_event, ))
-
-        if (self.flag_auto_thread_created_once == False):
-            thread_auto_mode.start()
-
-            self.flag_auto_thread_created_once = True
-        else:
-            if (self.flag_is_auto_thread_stopped == True):
-                app.home_page_auto_mode_thread_event.clear()
-
-                thread_auto_mode = None
-                thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction_1, desired_direction_2, label_reps, app.home_page_auto_mode_thread_event, ))
+            if (self.flag_auto_thread_created_once == False):
                 thread_auto_mode.start()
 
-                self.flag_is_auto_thread_stopped = False
+                self.flag_auto_thread_created_once = True
             else:
-                app.home_page_auto_mode_thread_event.set()
+                if (self.flag_is_auto_thread_stopped == True):
+                    app.home_page_auto_mode_thread_event.clear()
 
-                self.flag_is_auto_thread_stopped = True
+                    thread_auto_mode = None
+                    thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction,  label_reps, app.home_page_auto_mode_thread_event, ))
+                    thread_auto_mode.start()
+
+                    self.flag_is_auto_thread_stopped = False
+                else:
+                    app.home_page_auto_mode_thread_event.set()
+
+                    self.flag_is_auto_thread_stopped = True
+
 
     def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode):
         # Destroy the modes buttons
@@ -345,20 +344,14 @@ class HomePageFrame(customtkinter.CTkFrame):
 
         # Generate components
         # Position control input values
-        combobox_movement_1 = customtkinter.CTkOptionMenu(
+        combobox_movement = customtkinter.CTkOptionMenu(
                                                         master = self,
                                                         values = self.list_movement_entries, 
                                                         dynamic_resizing = False)
-        combobox_movement_1.set("Choose 1st movement")
-        combobox_movement_1.place(x = COMBOBOX_MOVEMENT_1_X, y = COMBOBOX_MOVEMENT_1_Y)
+        combobox_movement.set("Choose movement")
+        combobox_movement.place(x = COMBOBOX_MOVEMENT_1_X, y = COMBOBOX_MOVEMENT_1_Y)
 
-        combobox_movement_2 = customtkinter.CTkOptionMenu(
-                                                        master = self,
-                                                        values = self.list_movement_entries, 
-                                                        dynamic_resizing = False)
-        combobox_movement_2.set("Choose 2nd movement")
-        combobox_movement_2.place(x = COMBOBOX_MOVEMENT_1_X, y = COMBOBOX_MOVEMENT_1_Y + 150)
-
+        
         entry_desired_position = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y, "Enter here")
         label_desired_position = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y - 30, "Amplitude (mm)")
 
@@ -388,19 +381,23 @@ class HomePageFrame(customtkinter.CTkFrame):
         label_number_reps = label_generate(self, LABEL_NUMBER_REPS_X + 100, LABEL_NUMBER_REPS_Y, "")
 
         btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 700, COMBOBOX_MOVEMENT_1_Y + 75, "Submit")
-        btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement_1, combobox_movement_2, label_number_reps), fg_color = '#66CD00')
+        btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement, label_number_reps), fg_color = '#66CD00')
 
+        
+    
         # Return button configuration
         list_items_to_delete = [
                                 label_desired_position,
                                 entry_desired_position,
                                 slider_horizontal_speed,
                                 slider_vertical_speed,
-                                combobox_movement_1,
-                                combobox_movement_2,
+                                combobox_movement,
                                 btn_submit,
                                 label_number_reps,
+                                label_number_reps_indicator,
                                 label_horizontal_speed_slider,
+                                label_visualize_vertical_speed, 
+                                label_visualize_horizontal_speed,
                                 label_vertical_speed_slider]
 
         btn_back  = button_generate(self, BUTTON_BACK_VALUE_X, BUTTON_BACK_VALUE_Y, "Back")
@@ -424,7 +421,7 @@ class HomePageFrame(customtkinter.CTkFrame):
         btn_direction_right = button_generate(self, (BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
         btn_direction_right.configure(fg_color = '#3D59AB', state = "disabled")
 
-        # List with all buttons for manual control in order to change their colors
+        # List with all buttons for manual control to change their colors
         if (len(list_buttons_manual_control) == 0):
             list_buttons_manual_control.append(btn_direction_up)
             list_buttons_manual_control.append(btn_direction_down)
