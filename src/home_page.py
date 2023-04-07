@@ -43,7 +43,7 @@ BUTTON_DIRECTION_CENTER_Y   = 350
 ## Info about the vertical speed slider
 SLIDER_VERTICAL_SPEED_X                 = BUTTON_DIRECTION_CENTER_X + 350
 SLIDER_VERTICAL_SPEED_Y                 = BUTTON_DIRECTION_CENTER_Y - 50
-SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX  = 0
+SLIDER_SPEED_PREV_VALUE_INDEX  = 0
 SLIDER_VERTICAL_SPEED_RANGE_MAX         = 100
 
 ## Info about the horizontal speed slider
@@ -51,6 +51,9 @@ SLIDER_HORIZONTAL_SPEED_X                   = BUTTON_DIRECTION_CENTER_X + 350
 SLIDER_HORIZONTAL_SPEED_Y                   = BUTTON_DIRECTION_CENTER_Y + 50
 SLIDER_HORIZONTAL_SPEED_PREV_VALUE_INDEX    = 0
 SLIDER_HORIZONTAL_SPEED_RANGE_MAX           = 100
+
+SLIDER_ADAPTOR_SPEED_PREV_VALUE_INDEX  = 0
+SLIDER_ADAPTOR_SPEED_RANGE_MAX         = 100
 
 BUTTON_MANUAL_MODE_X        = 20
 BUTTON_MANUAL_MODE_Y        = 100
@@ -98,6 +101,8 @@ class HomePageFrame(customtkinter.CTkFrame):
     """
     list_slider_vertical_info = [0]
     list_slider_horizontal_info = [0]
+    list_slider_adaptor_info = [0]
+
     current_checkpoint_to_reach = 1
     list_movement_entries = ["Up to down", "Down to up", "Right to left", "Left to right","Screw up to screw down", "Screw down to screw up"]
 
@@ -139,6 +144,14 @@ class HomePageFrame(customtkinter.CTkFrame):
         elif (direction_a == "Left"):
             command_a = serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT
             id = serial_funcs.ID_MOTOR_HORIZONTAL
+        
+        elif (direction_a == "Screw up"):
+            command_a = serial_funcs.COMMAND_MOTOR_ADAPT_UP
+            id = serial_funcs.ID_MOTOR_ADAPT
+        
+        elif (direction_a == "Screw down"):
+            command_a = serial_funcs.COMMAND_MOTOR_ADAPT_DOWN
+            id = serial_funcs.ID_MOTOR_ADAPT
 
         if (direction_b == "Up"):
             command_b = serial_funcs.COMMAND_MOTOR_VERTICAL_UP
@@ -155,6 +168,14 @@ class HomePageFrame(customtkinter.CTkFrame):
         elif (direction_b == "Left"):
             command_b = serial_funcs.COMMAND_MOTOR_HORIZONTAL_LEFT
             id = serial_funcs.ID_MOTOR_HORIZONTAL
+
+        elif (direction_b == "Screw up"):
+            command_b = serial_funcs.COMMAND_MOTOR_ADAPT_UP
+            id = serial_funcs.ID_MOTOR_ADAPT
+        
+        elif (direction_b == "Screw down"):
+            command_b = serial_funcs.COMMAND_MOTOR_ADAPT_DOWN
+            id = serial_funcs.ID_MOTOR_ADAPT
 
         return id, command_a, command_b
 
@@ -240,7 +261,7 @@ class HomePageFrame(customtkinter.CTkFrame):
         """
         if (list_com_device_info[0] != 0):
             slider_value = round(slider_value)
-            previous_slider_value = round(list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX])
+            previous_slider_value = round(list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX])
 
             if (slider_value != previous_slider_value):
                 if (slider_type == "Vertical"):
@@ -258,9 +279,18 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                         serial_funcs.MODE_CHANGE_PARAMS,
                                                         slider_value,
                                                         list_com_device_info)
-                list_slider_info[SLIDER_VERTICAL_SPEED_PREV_VALUE_INDEX] = slider_value
+                
+                if (slider_type == "Adaptor"):
+                    serial_funcs.transmit_serial_data(
+                                                        serial_funcs.ID_MOTOR_ADAPT,
+                                                        serial_funcs.COMMAND_MOTOR_CHANGE_SPEED,
+                                                        serial_funcs.MODE_CHANGE_PARAMS,
+                                                        slider_value,
+                                                        list_com_device_info)
+
+                list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = slider_value
         
-        speed_value_mm_per_sec = int((72000000 / (65000 - 450 * slider_value)) * (1 / 80))
+        speed_value_mm_per_sec = int((72000000 / (6500 - 45 * slider_value)) * (1 / 80))
         label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
     
     def button_back_click(self, btn_back, list):
@@ -271,7 +301,7 @@ class HomePageFrame(customtkinter.CTkFrame):
         for i in range(len(list)):
             list[i].place_forget()
 
-        # Generate button modes 
+        # Generate button modes
         btn_manual_mode = button_generate(self, BUTTON_MANUAL_MODE_X, BUTTON_MANUAL_MODE_Y, "Manual Mode")
         btn_manual_mode.configure(command=lambda:self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
 
@@ -396,8 +426,16 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_horizontal_speed,
                                                                                                                                 serial_funcs.g_list_connected_device_info))
 
-        label_vertical_speed_slider     = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 10, "Vertical Speed (mm/s)")
-        label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 85, "Horizontal speed (mm/s)")
+        slider_adaptor_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 200, SLIDER_ADAPTOR_SPEED_RANGE_MAX)
+        slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : self.slider_speed_callback(
+                                                                                                                                slider_value,
+                                                                                                                                self.list_slider_adaptor_info,
+                                                                                                                                "Adaptor",
+                                                                                                                                label_visualize_rotation_speed,
+                                                                                                                                serial_funcs.g_list_connected_device_info))
+
+        label_vertical_speed_slider     = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y - 30, "Vertical Speed (mm/s)")
+        label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 70, "Horizontal speed (mm/s)")
 
         label_number_reps_indicator = label_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y, "Number of reps : ")
         label_number_reps = label_generate(self, LABEL_NUMBER_REPS_X + 115, LABEL_NUMBER_REPS_Y, "")
