@@ -336,27 +336,45 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                 v1 = v.split("\n")
                 values.append(v1[0])
             
-            vs_mm_s = round(72000000 / (65000 - 450 * float(values[3]))) * (1 / 80)
-            hs_mm_s = round(72000000 / (65000 - 450 * float(values[4]))) * (1 / 80)
+            vs_mm_s = round((72000000 / (65000 - 450 * float(values[3]))) * (1 / 80))
+            hs_mm_s = round((72000000 / (65000 - 450 * float(values[4]))) * (1 / 80))
 
             m1.set(values[0]) 
             m2.set(values[1]) 
             self.cleartext(A)
             A.insert(0, values[2])
-            LVS.configure(text = (str(vs_mm_s) + " mm/s"))
-            VS.configure(float(values[3]))
-            LHS.configure(text = (str(hs_mm_s) + " mm/s"))
-            HS.configure(float(values[4]))
+            #LVS.configure(text = (str(vs_mm_s) + " mm/s"))
+            #VS.configure(float(values[3]))
+            #LHS.configure(text = (str(hs_mm_s) + " mm/s"))
+            #HS.configure(float(values[4]))
             self.cleartext(N)
             N.insert(0, values[5])
             self.cleartext(n)
             n.insert(0, name)
 
+            #self.slider_speed_callback
+            self.slider_speed_callback(
+                                       VS.get(),
+                                       self.list_slider_vertical_info,
+                                       "Vertical",
+                                       LVS,
+                                       serial_funcs.g_list_connected_device_info)
+            
+            self.slider_speed_callback(
+                                       HS.get(),
+                                       self.list_slider_vertical_info,
+                                       "Horizontal",
+                                       LHS,
+                                       serial_funcs.g_list_connected_device_info)
+            
+            print(VS.get())
+            print(HS.get())
+
     def cleartext(self, var):
         var.delete(0,"end")
 
     def __init__(self, master, **kwargs):
-        """! Initialisation of a Home Page Frame
+        """! Initialisation of a Programs Page Frame
         """
         super().__init__(master, **kwargs)
 
@@ -440,7 +458,26 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                                                             file_list))
         
         button_select_settings  = button_generate(self, BUTTON_SELECT_X, BUTTON_SELECT_Y, "Select settings")
-        button_select_settings.configure(command = lambda : self.Select(programs_list, combobox_movement_1, combobox_movement_2, entry_desired_position, label_visualize_vertical_speed, slider_vertical_speed, label_visualize_horizontal_speed, slider_vertical_speed, entry_number_reps, file_name))
+        button_select_settings.configure(command = lambda : self.Select(
+                                                                        programs_list, 
+                                                                        combobox_movement_1, 
+                                                                        combobox_movement_2, 
+                                                                        entry_desired_position, 
 
-        btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 700, COMBOBOX_MOVEMENT_1_Y + 75, "Submit")
-        btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement_1, combobox_movement_2, label_number_reps_indicator), fg_color = '#66CD00')
+                                                                        label_visualize_vertical_speed, 
+                                                                        slider_vertical_speed,
+
+                                                                        label_visualize_horizontal_speed, 
+                                                                        slider_horizontal_speed, 
+
+                                                                        entry_number_reps, 
+                                                                        file_name))
+
+        btn_submit  = button_generate(self, ENTRY_POS_X, ENTRY_POS_Y + 300, "Submit")
+        btn_submit.configure(command = lambda : self.button_submit_click(
+                                                                         btn_submit, 
+                                                                         entry_desired_position, 
+                                                                         combobox_movement_1, 
+                                                                         combobox_movement_2, 
+                                                                         label_number_reps_indicator), 
+                                                                         fg_color = '#66CD00')
