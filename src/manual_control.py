@@ -25,7 +25,7 @@ def key_pressed(event, previous_motor, list_buttons):
     @param event            Event object containing different data about the physical event that the computer recorded
     @param previous_motor   The previous motor that was controlled - is necessary to send the appropriate stop condition to the uC
     """
-    if (event.char and event.char in 'wads'):
+    if (event.char and event.char in 'wadsjk'):
         if event.char == 'w':
             serial_funcs.transmit_serial_data(
                                             serial_funcs.ID_MOTOR_VERTICAL_LEFT,
@@ -73,6 +73,26 @@ def key_pressed(event, previous_motor, list_buttons):
             list_buttons[INDEX_BUTTON_RIGHT].configure(fg_color = '#EE1289')
 
             previous_motor[INDEX_PREVIOUS_MOTOR] = serial_funcs.ID_MOTOR_HORIZONTAL
+        
+        elif event.keysym == 'j':
+            serial_funcs.transmit_serial_data(
+                                            serial_funcs.ID_MOTOR_ADAPT,
+                                            serial_funcs.COMMAND_MOTOR_ADAPT_UP,
+                                            serial_funcs.MODE_MANUAL_CONTROL,
+                                            serial_funcs.DATA_NONE,
+                                            serial_funcs.g_list_connected_device_info)
+
+            previous_motor[INDEX_PREVIOUS_MOTOR] = serial_funcs.ID_MOTOR_ADAPT
+
+        elif event.keysym == 'k':
+            serial_funcs.transmit_serial_data(
+                                        serial_funcs.ID_MOTOR_ADAPT,
+                                        serial_funcs.COMMAND_MOTOR_ADAPT_DOWN,
+                                        serial_funcs.MODE_MANUAL_CONTROL,
+                                        serial_funcs.DATA_NONE,
+                                        serial_funcs.g_list_connected_device_info)
+
+            previous_motor[INDEX_PREVIOUS_MOTOR] = serial_funcs.ID_MOTOR_ADAPT
 
 def key_released(event, previous_motor, list_buttons):
     """! Sends appropriate stop condition when a keyboard key is released
@@ -94,6 +114,14 @@ def key_released(event, previous_motor, list_buttons):
         serial_funcs.transmit_serial_data(
                                                 serial_funcs.ID_MOTOR_HORIZONTAL,
                                                 serial_funcs.COMMAND_MOTOR_HORIZONTAL_STOP,
+                                                serial_funcs.MODE_MANUAL_CONTROL,
+                                                serial_funcs.DATA_NONE,
+                                                serial_funcs.g_list_connected_device_info)
+
+    elif (previous_motor[INDEX_PREVIOUS_MOTOR] == serial_funcs.ID_MOTOR_ADAPT):
+        serial_funcs.transmit_serial_data(
+                                                serial_funcs.ID_MOTOR_ADAPT,
+                                                serial_funcs.COMMAND_MOTOR_ADAPT_STOP,
                                                 serial_funcs.MODE_MANUAL_CONTROL,
                                                 serial_funcs.DATA_NONE,
                                                 serial_funcs.g_list_connected_device_info)
