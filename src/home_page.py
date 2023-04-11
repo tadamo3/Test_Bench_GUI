@@ -286,13 +286,19 @@ class HomePageFrame(customtkinter.CTkFrame):
         btn_auto_mode = button_generate(self, BUTTON_AUTO_MODE_X, BUTTON_AUTO_MODE_Y, "Automatic mode")
         btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
 
-    def button_submit_click(self, button_submit, entry_position, combobox_direction, label_reps):
+    def button_submit_click(self, button_submit, entry_position, entry_turns, combobox_direction, label_reps):
         # This function is utilized when the submit button is clicked 
 
         # Get user input
+        # Desired position
         desired_position = int(entry_position.get())
         desired_direction = combobox_direction.get()
+        
+        # Desired turns 
 
+        desired_turns = float(entry_turns.get())
+
+        # Generate message errors 
         error_msg = None
 
 
@@ -311,7 +317,7 @@ class HomePageFrame(customtkinter.CTkFrame):
         if desired_direction == list_movement_entries[4] or desired_direction == list_movement_entries[5]:
             if desired_position > MAX_SCREW: 
                 error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
-
+        
         # Combobox cannot be empty
         if desired_direction == "Choose movement":
             error_msg = CTkMessagebox(title="Error", message="Missing desired direction", icon="cancel")
@@ -323,7 +329,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                 button_submit.configure(text = "Submit", fg_color = '#66CD00')
 
             # Default thread
-            thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction, label_reps, app.home_page_auto_mode_thread_event, ))
+            thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction, desired_turns,label_reps, app.home_page_auto_mode_thread_event, ))
 
             if (self.flag_auto_thread_created_once == False):
                 thread_auto_mode.start()
@@ -334,7 +340,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                     app.home_page_auto_mode_thread_event.clear()
 
                     thread_auto_mode = None
-                    thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction,  label_reps, app.home_page_auto_mode_thread_event, ))
+                    thread_auto_mode = Thread(target = self.auto_mode, args = (desired_position, desired_direction, desired_turns, label_reps, app.home_page_auto_mode_thread_event, ))
                     thread_auto_mode.start()
 
                     self.flag_is_auto_thread_stopped = False
@@ -373,6 +379,10 @@ class HomePageFrame(customtkinter.CTkFrame):
         entry_desired_position = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y, "Enter here")
         label_desired_position = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y - 30, "Amplitude (mm) : ")
 
+
+        entry_desired_turns = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y+100, "Enter here")
+        label_desired_turns = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y +100 - 30, "Number of turns : ")
+
         label_speed = label_generate(self, COMBOBOX_MOVEMENT_1_X+400, COMBOBOX_MOVEMENT_1_Y - 30 , "Choose speed : ")
 
         label_visualize_vertical_speed      = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y + 20, "20 mm/s")
@@ -397,11 +407,11 @@ class HomePageFrame(customtkinter.CTkFrame):
         label_vertical_speed_slider     = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 10, "Vertical Speed (mm/s)")
         label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 85, "Horizontal speed (mm/s)")
 
-        label_number_reps_indicator = label_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y, "Number of reps: ")
+        label_number_reps_indicator = label_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y, "Number of reps : ")
         label_number_reps = label_generate(self, LABEL_NUMBER_REPS_X + 115, LABEL_NUMBER_REPS_Y, "")
 
         btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 800, COMBOBOX_MOVEMENT_1_Y + 50, "Submit")
-        btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement, label_number_reps), fg_color = '#66CD00')
+        btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, entry_desired_turns,combobox_movement, label_number_reps), fg_color = '#66CD00')
 
         
     
@@ -414,6 +424,8 @@ class HomePageFrame(customtkinter.CTkFrame):
                                 combobox_movement,
                                 btn_submit,
                                 label_auto, 
+                                label_desired_turns, 
+                                entry_desired_turns,
                                 label_movement,
                                 label_number_reps,
                                 label_speed,
