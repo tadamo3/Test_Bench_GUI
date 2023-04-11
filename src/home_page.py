@@ -12,6 +12,7 @@ from serial.tools import list_ports
 from threading import Thread
 from threading import Event
 from CTkMessagebox import CTkMessagebox
+from PIL import Image, ImageTk
 import time
 
 import serial_funcs
@@ -37,7 +38,7 @@ INDEX_LABEL_ENCODER_VERTICAL_RIGHT  = 1
 INDEX_LABEL_ENCODER_HORIZONTAL      = 2
 
 BUTTON_DIRECTION_CENTER_X   = 400
-BUTTON_DIRECTION_CENTER_Y   = 250
+BUTTON_DIRECTION_CENTER_Y   = 350
 
 ## Info about the vertical speed slider
 SLIDER_VERTICAL_SPEED_X                 = BUTTON_DIRECTION_CENTER_X + 350
@@ -62,13 +63,16 @@ BUTTON_BACK_VALUE_Y = 60
 
 ## Info about the entry textbox for position control
 ASK_ENTRY_VALUE_X = 200
-ASK_ENTRY_VALUE_Y = 300
+ASK_ENTRY_VALUE_Y = 400
 
 COMBOBOX_MOVEMENT_1_X = 100
-COMBOBOX_MOVEMENT_1_Y = 200
+COMBOBOX_MOVEMENT_1_Y = 300
 
-LABEL_NUMBER_REPS_X = COMBOBOX_MOVEMENT_1_X + 700
-LABEL_NUMBER_REPS_Y = COMBOBOX_MOVEMENT_1_Y + 150
+LABEL_NUMBER_REPS_X = COMBOBOX_MOVEMENT_1_X + 500
+LABEL_NUMBER_REPS_Y = COMBOBOX_MOVEMENT_1_Y + 350
+
+LABEL_MODE_X = 400
+LABEL_MODE_Y = 150
 
 ## Maximal values we can travel to
 MAX_HORIZONTAL  = 400
@@ -268,6 +272,7 @@ class HomePageFrame(customtkinter.CTkFrame):
         label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
     
     def button_back_click(self, btn_back, list):
+        # This function is utilized when the back button is clicked 
         # Destroy all previous components generated beforehand
         btn_back.place_forget() 
 
@@ -282,6 +287,8 @@ class HomePageFrame(customtkinter.CTkFrame):
         btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
 
     def button_submit_click(self, button_submit, entry_position, combobox_direction, label_reps):
+        # This function is utilized when the submit button is clicked 
+
         # Get user input
         desired_position = int(entry_position.get())
         desired_direction = combobox_direction.get()
@@ -343,7 +350,18 @@ class HomePageFrame(customtkinter.CTkFrame):
         button_auto_mode.place_forget()
 
         # Generate components
+        # Label automatic mode 
+        
+        label_auto = customtkinter.CTkLabel(master = self, 
+                                            text_color = "dodger blue", 
+                                            font = ("Arial",40),
+                                            text = "AUTOMATIC MODE") 
+    
+        label_auto.place(x=LABEL_MODE_X,y=LABEL_MODE_Y)
+
+        
         # Position control input values
+        label_movement = label_generate(self,COMBOBOX_MOVEMENT_1_X,COMBOBOX_MOVEMENT_1_Y-30, "Movement : ")
         combobox_movement = customtkinter.CTkOptionMenu(
                                                         master = self,
                                                         values = self.list_movement_entries, 
@@ -353,12 +371,14 @@ class HomePageFrame(customtkinter.CTkFrame):
 
         
         entry_desired_position = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y, "Enter here")
-        label_desired_position = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y - 30, "Amplitude (mm)")
+        label_desired_position = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y - 30, "Amplitude (mm) : ")
 
-        label_visualize_vertical_speed      = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y - 5, "20 mm/s")
-        label_visualize_horizontal_speed    = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y + 95, "20 mm/s")
+        label_speed = label_generate(self, COMBOBOX_MOVEMENT_1_X+400, COMBOBOX_MOVEMENT_1_Y - 30 , "Choose speed : ")
 
-        slider_vertical_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y, SLIDER_VERTICAL_SPEED_RANGE_MAX)
+        label_visualize_vertical_speed      = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y + 20, "20 mm/s")
+        label_visualize_horizontal_speed    = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y + 100, "20 mm/s")
+
+        slider_vertical_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y+40, SLIDER_VERTICAL_SPEED_RANGE_MAX)
         slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_vertical_info,
@@ -366,7 +386,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_vertical_speed,
                                                                                                                                 serial_funcs.g_list_connected_device_info))
 
-        slider_horizontal_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 100, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
+        slider_horizontal_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 120, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
         slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_horizontal_info,
@@ -374,13 +394,13 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_horizontal_speed,
                                                                                                                                 serial_funcs.g_list_connected_device_info))
 
-        label_vertical_speed_slider     = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y - 30, "Vertical Speed (mm/s)")
-        label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 70, "Horizontal speed (mm/s)")
+        label_vertical_speed_slider     = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 10, "Vertical Speed (mm/s)")
+        label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 85, "Horizontal speed (mm/s)")
 
         label_number_reps_indicator = label_generate(self, LABEL_NUMBER_REPS_X, LABEL_NUMBER_REPS_Y, "Number of reps: ")
-        label_number_reps = label_generate(self, LABEL_NUMBER_REPS_X + 100, LABEL_NUMBER_REPS_Y, "")
+        label_number_reps = label_generate(self, LABEL_NUMBER_REPS_X + 115, LABEL_NUMBER_REPS_Y, "")
 
-        btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 700, COMBOBOX_MOVEMENT_1_Y + 75, "Submit")
+        btn_submit  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 800, COMBOBOX_MOVEMENT_1_Y + 50, "Submit")
         btn_submit.configure(command = lambda : self.button_submit_click(btn_submit, entry_desired_position, combobox_movement, label_number_reps), fg_color = '#66CD00')
 
         
@@ -393,7 +413,10 @@ class HomePageFrame(customtkinter.CTkFrame):
                                 slider_vertical_speed,
                                 combobox_movement,
                                 btn_submit,
+                                label_auto, 
+                                label_movement,
                                 label_number_reps,
+                                label_speed,
                                 label_number_reps_indicator,
                                 label_horizontal_speed_slider,
                                 label_visualize_vertical_speed, 
@@ -404,9 +427,18 @@ class HomePageFrame(customtkinter.CTkFrame):
         btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
 
     def button_manual_mode_click(self,  button_manual_mode, button_auto_mode):
+        # This function is utilized when the manual mode is activated (clicked by user)
         # Delete mode selection buttons
         button_manual_mode.place_forget()
         button_auto_mode.place_forget()
+
+        # Generate manual label 
+        label_manual = customtkinter.CTkLabel(master = self, 
+                                            text_color = "dodger blue", 
+                                            font = ("Arial",40),
+                                            text = "MANUAL MODE") 
+    
+        label_manual.place(x=LABEL_MODE_X, y=LABEL_MODE_Y)
 
         # Generate direction buttons
         btn_direction_up = button_generate(self, BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y - 100), "Going Up")
@@ -459,6 +491,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                 btn_direction_right,
                                 slider_vertical_speed,
                                 slider_horizontal_speed,
+                                label_manual,
                                 label_horizontal_speed_slider,
                                 label_vertical_speed_slider,
                                 label_visualize_vertical_speed,
@@ -486,6 +519,7 @@ class HomePageFrame(customtkinter.CTkFrame):
     
         btn_manual_mode = button_generate(self, BUTTON_MANUAL_MODE_X, BUTTON_MANUAL_MODE_Y, "Manual Mode")
         btn_auto_mode   = button_generate(self, BUTTON_AUTO_MODE_X, BUTTON_AUTO_MODE_Y, "Automatic mode")
+
 
         btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
         btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
