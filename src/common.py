@@ -9,6 +9,9 @@
 import tkinter
 import customtkinter
 
+# Global constants
+
+
 # Functions
 def set_appearance(appearance_mode, default_color_theme):
     """! Sets the appearance of a given page
