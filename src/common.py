@@ -10,7 +10,13 @@ import tkinter
 import customtkinter
 
 # Global constants
-
+CLOCK_FREQUENCY         = 72000000
+PULSE_PER_MM            = 80
+ARR_MINIMUM             = 6500
+SPEED_INCREMENT         = 45
+PULSE_PER_TURN_ADAPTOR  = 400
+RATIO_GEARBOX_ADAPTOR   = 10
+PRESCALOR               = 10
 
 # Functions
 def set_appearance(appearance_mode, default_color_theme):
@@ -110,3 +116,21 @@ def entry_generate(self, label_pos_x, label_pos_y, text):
                 y = label_pos_y)
     
     return entry
+
+def calculate_speed_mm_per_sec(slider_value):
+    numerator = CLOCK_FREQUENCY
+    denominator = ((ARR_MINIMUM - (SPEED_INCREMENT * slider_value)) + 1) * (PRESCALOR + 1)
+
+    speed_value_mm_per_sec = int((numerator / denominator) * (1 / PULSE_PER_MM))
+
+    return speed_value_mm_per_sec
+
+
+def calculate_speed_turn_per_sec(slider_value):
+    numerator = CLOCK_FREQUENCY
+    denominator = ((ARR_MINIMUM - (SPEED_INCREMENT * slider_value)) + 1) * (PRESCALOR + 1)
+
+    speed_value_turn_per_sec = int(numerator / denominator) * (2 / PULSE_PER_TURN_ADAPTOR)
+    gearbox_turn_per_sec = speed_value_turn_per_sec / RATIO_GEARBOX_ADAPTOR
+
+    return gearbox_turn_per_sec

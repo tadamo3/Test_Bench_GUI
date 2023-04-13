@@ -19,13 +19,6 @@ from common import *
 from automatic_control import auto_mode, list_movement_entries
 
 ## Global constants
-## The width and height of the home page
-HOME_PAGE_WIDTH     = 1450
-HOME_PAGE_HEIGHT    = 1500
-
-BUTTON_DIRECTION_CENTER_X   = 400
-BUTTON_DIRECTION_CENTER_Y   = 250
-
 ## Info about the vertical speed slider
 SLIDER_VERTICAL_SPEED_X                 = 200
 SLIDER_VERTICAL_SPEED_Y                 = 400
@@ -38,23 +31,12 @@ SLIDER_HORIZONTAL_SPEED_Y                   = 500
 SLIDER_HORIZONTAL_SPEED_PREV_VALUE_INDEX    = 0
 SLIDER_HORIZONTAL_SPEED_RANGE_MAX           = 100
 
-## Info about the entry textbox for position control
-ASK_ENTRY_VALUE_X = 200
-ASK_ENTRY_VALUE_Y = 300
-
 COMBOBOX_MOVEMENT_1_X = 100
 COMBOBOX_MOVEMENT_1_Y = 200
-
-LABEL_NUMBER_REPS_X = 100
-LABEL_NUMBER_REPS_Y = 450
 
 ## Maximal values we can travel to
 MAX_HORIZONTAL  = 30
 MAX_VERTICAL    = 30
-
-## Listbox position
-FRAME_POS_X = 780
-FRAME_POS_Y = 0
 
 ## Name of file
 ENTRY_POS_X = 300
@@ -73,13 +55,17 @@ BUTTON_DIRECTION_CENTER_Y = 250
 SLIDER_PREV_VALUE_INDEX = 0
 SLIDER_SPEED_PREV_VALUE_INDEX = 1
 
-CLOCK_FREQUENCY         = 72000000
-PULSE_PER_MM            = 80
-ARR_MINIMUM             = 6500
-SPEED_INCREMENT         = 45
-PULSE_PER_TURN_ADAPTOR  = 400
-RATIO_GEARBOX_ADAPTOR   = 10
-PRESCALOR               = 10
+INDEX_COMBOBOX_MOVEMENTS        = 0
+INDEX_ENTRY_DESIRED_POSITION    = 1
+INDEX_ENTRY_DESIRED_TURNS       = 2
+INDEX_LABEL_VERTICAL_SPEED      = 3
+INDEX_LABEL_HORIZONTAL_SPEED    = 4
+INDEX_LABEL_ADAPTOR_SPEED       = 5
+INDEX_SLIDER_VERTICAL_SPEED     = 6
+INDEX_SLIDER_HORIZONTAL_SPEED   = 7
+INDEX_SLIDER_ADAPTOR_SPEED      = 8
+INDEX_ENTRY_NUMBER_REPS         = 9
+INDEX_ENTRY_FILENAME            = 10
 
 ## Global variables
 path_to_programs_folder = '..\\Test_Bench_GUI\\programs'
@@ -156,12 +142,9 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                                         slider_value,
                                                         list_com_device_info)
                     
-                    numerator = CLOCK_FREQUENCY
-                    denominator = ((ARR_MINIMUM - (SPEED_INCREMENT * slider_value)) + 1) * (PRESCALOR + 1)
+                    speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
 
-                    speed_value_mm_per_sec = int((numerator / denominator) * (1 / PULSE_PER_MM))
                     list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = speed_value_mm_per_sec
-
                     label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
 
                 if (slider_type == "Horizontal"):
@@ -172,12 +155,9 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                                         slider_value,
                                                         list_com_device_info)
                     
-                    numerator = CLOCK_FREQUENCY
-                    denominator = ((ARR_MINIMUM - (SPEED_INCREMENT * slider_value)) + 1) * (PRESCALOR + 1)
+                    speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
 
-                    speed_value_mm_per_sec = int((numerator / denominator) * (1 / PULSE_PER_MM))
                     list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = speed_value_mm_per_sec
-
                     label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
                 
                 if (slider_type == "Adaptor"):
@@ -188,13 +168,8 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                                         slider_value,
                                                         list_com_device_info)
                     
-                    numerator = CLOCK_FREQUENCY
-                    denominator = ((ARR_MINIMUM - (SPEED_INCREMENT * slider_value)) + 1) * (PRESCALOR + 1)
-
-                    speed_value_turn_per_sec = int(numerator / denominator) * (2 / PULSE_PER_TURN_ADAPTOR)
-                    gearbox_turn_per_sec = speed_value_turn_per_sec / RATIO_GEARBOX_ADAPTOR
-                    
-                    gearbox_speed_string = f"{gearbox_turn_per_sec:.2f}"
+                    gearbox_speed_turn_per_sec = calculate_speed_turn_per_sec(slider_value)
+                    gearbox_speed_string = f"{gearbox_speed_turn_per_sec:.2f}"
 
                     list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = float(gearbox_speed_string)
                     label_slider.configure(text = (gearbox_speed_string + " turn/s"))
@@ -262,7 +237,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
                 self.flag_is_auto_thread_stopped = True
 
-    def file_creator(self, filename, combobox_movements, entry_amplitude, entry_number_of_reps, slider_vertical, slider_horizontal, slider_adaptor, frame_programs_list):
+    def file_creator(self, filename, list_objects, frame_programs_list):
         print(filename)
         complete_path_new_file = path_to_programs_folder + '\\' + filename + '.txt'
         name_file_to_show = filename.replace(path_to_programs_folder + '\\', '') + ".txt"
@@ -273,13 +248,13 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
         with open(complete_path_new_file, "w") as f:
             f.write('Movement sequence\n')
-            f.write(combobox_movements.get() + '\n')
+            f.write(list_objects[INDEX_COMBOBOX_MOVEMENTS].get() + '\n')
 
             f.write('Amplitude (mm)\n')
-            f.write(entry_amplitude.get() + '\n')
+            f.write(list_objects[INDEX_ENTRY_DESIRED_POSITION].get() + '\n')
 
-            #f.write('Number of turns to do\n')
-            #f.write(number_of_turns + '\n')
+            f.write('Number of turns to do\n')
+            f.write(list_objects[INDEX_ENTRY_DESIRED_TURNS] + '\n')
 
             f.write('Vertical speed (mm/s)\n')
             f.write(str(vertical_speed) + '\n')
@@ -291,20 +266,16 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
             f.write(str(adaptor_speed) + '\n')
 
             f.write('Number of repetitions to execute\n')
-            f.write(entry_number_of_reps.get() + '\n')
+            f.write(list_objects[INDEX_ENTRY_NUMBER_REPS].get() + '\n')
 
             f.close()
         
             frame_programs_list.add_individual_program(filename)
             frame_programs_list.list_buttons_programs_objects[-1].configure(command = lambda : self.button_select_program_callback(
                                                                                                                                     frame_programs_list.list_buttons_programs_objects[-1],
-                                                                                                                                    combobox_movements,
-                                                                                                                                    entry_amplitude,
-                                                                                                                                    slider_vertical,
-                                                                                                                                    slider_horizontal,
-                                                                                                                                    slider_adaptor))
+                                                                                                                                    list_objects))
         
-    def button_select_program_callback(self, button_object, combobox_movements, entry_amplitude, slider_vertical, slider_horizontal, slider_adaptor):
+    def button_select_program_callback(self, button_object, list_objects):
         filename_to_open = button_object.cget("text") + '.txt'
         complete_path = path_to_programs_folder + '\\' + filename_to_open
         print(complete_path)
@@ -317,23 +288,25 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                 values.append(separate_lines[0])
             
             # Set the desired movement sequence combobox text
-            combobox_movements.set(values[0])
+            list_objects[INDEX_COMBOBOX_MOVEMENTS].set(values[0])
 
             # Set the desired amplitude
-            entry_amplitude.delete(0, len(entry_amplitude.get()))
-            entry_amplitude.insert(0, values[1])
+            list_objects[INDEX_ENTRY_DESIRED_POSITION].delete(0, len(list_objects[INDEX_ENTRY_DESIRED_POSITION].get()))
+            list_objects[INDEX_ENTRY_DESIRED_POSITION].insert(0, values[1])
 
             # Set the desired number of turns
-            #self.entry_desired_turns.configure(textvariable = values[2])
+            list_objects[INDEX_ENTRY_DESIRED_TURNS].delete(0, len(list_objects[INDEX_ENTRY_DESIRED_TURNS].get()))
+            list_objects[INDEX_ENTRY_DESIRED_POSITION].insert(0, values[2])
 
             # Set the vertical speed slider
-            slider_vertical.set(int(values[2]))
+            list_objects[INDEX_SLIDER_VERTICAL_SPEED].set(int(values[3]))
+
 
             # Set the horizontal speed slider
-            slider_horizontal.set(int(values[3]))
+            list_objects[INDEX_SLIDER_HORIZONTAL_SPEED].set(int(values[4]))
 
             # Set the adaptor speed slider
-            slider_adaptor.set(int(values[4]))
+            list_objects[INDEX_SLIDER_ADAPTOR_SPEED].set(int(values[5]))
 
     def cleartext(self, var):
         var.delete(0,"end")
@@ -384,7 +357,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_adaptor_info,
-                                                                                                                                "Horizontal",
+                                                                                                                                "Adaptor",
                                                                                                                                 label_visualize_adaptor_speed,
                                                                                                                                 g_list_connected_device_info))
 
@@ -410,31 +383,34 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                     padx    = 10,
                                     pady    = 10)
 
+        # Add all useful objects for the save settings option
+        list_objects_programs_page = [combobox_movement,
+                                            entry_desired_position,
+                                            entry_desired_turns,
+                                            label_visualize_vertical_speed,
+                                            label_visualize_horizontal_speed,
+                                            label_visualize_adaptor_speed,
+                                            slider_vertical_speed,
+                                            slider_horizontal_speed,
+                                            slider_adaptor_speed,
+                                            entry_number_reps,
+                                            entry_filename]
+
+        # Associate a callback function for every program button
         for i in range(len(programs_list_frame.list_buttons_programs_objects)):
             programs_list_frame.list_buttons_programs_objects[i].configure(command = lambda : self.button_select_program_callback(
                                                                                                                                     programs_list_frame.list_buttons_programs_objects[i],
-                                                                                                                                    combobox_movement,
-                                                                                                                                    entry_desired_position,
-                                                                                                                                    slider_vertical_speed,
-                                                                                                                                    slider_horizontal_speed,
-                                                                                                                                    slider_adaptor_speed))
+                                                                                                                                    list_objects_programs_page))
 
+        # Generate buttons
         button_save_settings  = button_generate(self, BUTTON_SETTINGS_X, BUTTON_SETTINGS_Y, "Save settings")
         button_save_settings.configure(command = lambda : self.file_creator(
                                                                             entry_filename.get(), 
-                                                                            combobox_movement, 
-                                                                            entry_desired_position, 
-                                                                            entry_number_reps,
-                                                                            slider_vertical_speed,
-                                                                            slider_horizontal_speed,
-                                                                            slider_adaptor_speed,
+                                                                            list_objects_programs_page,
                                                                             programs_list_frame))
 
         btn_submit  = button_generate(self, ENTRY_POS_X, ENTRY_POS_Y + 100, "Submit")
         btn_submit.configure(command = lambda : self.button_submit_click(
                                                                          btn_submit, 
-                                                                         entry_desired_position, 
-                                                                         combobox_movement_1, 
-                                                                         combobox_movement_2, 
-                                                                         label_number_reps_indicator), 
+                                                                         list_objects_programs_page), 
                                                                          fg_color = '#66CD00')

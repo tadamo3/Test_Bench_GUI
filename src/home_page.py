@@ -176,12 +176,9 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                         slider_value,
                                                         list_com_device_info)
                     
-                    numerator = CLOCK_FREQUENCY
-                    denominator = ((ARR_MINIMUM - (SPEED_INCREMENT * slider_value)) + 1) * (PRESCALOR + 1)
+                    speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
 
-                    speed_value_mm_per_sec = int((numerator / denominator) * (1 / PULSE_PER_MM))
                     list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = speed_value_mm_per_sec
-
                     label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
 
                 if (slider_type == "Horizontal"):
@@ -192,12 +189,9 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                         slider_value,
                                                         list_com_device_info)
                     
-                    numerator = CLOCK_FREQUENCY
-                    denominator = ((ARR_MINIMUM - (SPEED_INCREMENT * slider_value)) + 1) * (PRESCALOR + 1)
+                    speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
 
-                    speed_value_mm_per_sec = int((numerator / denominator) * (1 / PULSE_PER_MM))
                     list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = speed_value_mm_per_sec
-
                     label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
                 
                 if (slider_type == "Adaptor"):
@@ -208,13 +202,8 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                         slider_value,
                                                         list_com_device_info)
                     
-                    numerator = CLOCK_FREQUENCY
-                    denominator = ((ARR_MINIMUM - (SPEED_INCREMENT * slider_value)) + 1) * (PRESCALOR + 1)
-
-                    speed_value_turn_per_sec = int(numerator / denominator) * (2 / PULSE_PER_TURN_ADAPTOR)
-                    gearbox_turn_per_sec = speed_value_turn_per_sec / RATIO_GEARBOX_ADAPTOR
-                    
-                    gearbox_speed_string = f"{gearbox_turn_per_sec:.2f}"
+                    gearbox_speed_turn_per_sec = calculate_speed_turn_per_sec(slider_value)
+                    gearbox_speed_string = f"{gearbox_speed_turn_per_sec:.2f}"
 
                     list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = float(gearbox_speed_string)
                     label_slider.configure(text = (gearbox_speed_string + " turn/s"))
