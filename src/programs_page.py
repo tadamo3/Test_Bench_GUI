@@ -64,8 +64,9 @@ INDEX_LABEL_ADAPTOR_SPEED       = 5
 INDEX_SLIDER_VERTICAL_SPEED     = 6
 INDEX_SLIDER_HORIZONTAL_SPEED   = 7
 INDEX_SLIDER_ADAPTOR_SPEED      = 8
-INDEX_ENTRY_NUMBER_REPS         = 9
-INDEX_ENTRY_FILENAME            = 10
+INDEX_ENTRY_NUMBER_REPS_TO_DO   = 9
+INDEX_LABEL_NUMBER_REPS_ACTUAL  = 10
+INDEX_ENTRY_FILENAME            = 11
 
 ## Global variables
 path_to_programs_folder = '..\\Test_Bench_GUI\\programs'
@@ -74,7 +75,11 @@ path_to_programs_folder = '..\\Test_Bench_GUI\\programs'
 class ProgramsList(customtkinter.CTkScrollableFrame):
     list_buttons_programs_names = []
     list_buttons_programs_objects = []
+
     counter_programs = 0
+
+    flag_is_paused_requested = False
+    flag_is_stop_requested = False
 
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
@@ -119,6 +124,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
     list_slider_vertical_info   = [0, 0]
     list_slider_horizontal_info = [0, 0]
     list_slider_adaptor_info    = [0, 0]
+    list_objects_programs_page = []
 
     flag_is_auto_thread_stopped = False
     flag_auto_thread_created_once = False
@@ -176,69 +182,67 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
                 list_slider_info[SLIDER_PREV_VALUE_INDEX] = slider_value
     
-    def button_submit_click(self, button_submit, entry_position, combobox_direction_1, combobox_direction_2, label_reps):
-        dp_str = entry_position.get()
-        desired_position = int(dp_str)
-        desired_direction_1 = combobox_direction_1.get()
-        desired_direction_2 = combobox_direction_2.get()
+    def button_pause_click(self):
+        app.auto_mode_pause_thread_event.set()
 
-        # User input checkup
+    def button_submit_click(self, button_submit, button_pause, list_objects):
+        desired_position = int(list_objects[INDEX_ENTRY_DESIRED_POSITION].get())
+        desired_direction = list_objects[INDEX_COMBOBOX_MOVEMENTS].get()
+        
+        # Desired turns 
+        desired_turns = float(list_objects[INDEX_ENTRY_DESIRED_TURNS].get())
+
+        desired_reps = int(list_objects[INDEX_ENTRY_NUMBER_REPS_TO_DO].get())
+
+        error_msg = None
+
         # Cannot exceed max value
-        if ((desired_direction_1 == "Up" or desired_direction_1 == "Down") &
-        desired_position > MAX_VERTICAL):
-            message_err_input = CTkMessagebox(title="Error", message="Desired position not possible", icon="cancel")
-        elif ((desired_direction_1 == "Right" or desired_direction_1 == "Left") &
-        desired_position > MAX_HORIZONTAL):
-            message_err_input = CTkMessagebox(title="Error", message="Desired position not possible", icon="cancel")
-
-        # Entry box for desired position cannot be empty
-        if (dp_str == ''):
-            message_err_input = CTkMessagebox(title="Error", message="Missing desired position", icon="cancel")
-
-        # Cannot have incompatible 2nd movement
-        if (desired_direction_1 == "Up" and desired_direction_2 != "Down"):
-            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
-        elif (desired_direction_1 == "Down" and desired_direction_2 != "Up"):
-            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
-        elif (desired_direction_1 == "Right" and desired_direction_2 != "Left"):
-            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
-        elif (desired_direction_1 == "Left" and desired_direction_2 != "Right"):
-            message_err_input = CTkMessagebox(title="Error", message="Incompatible directions", icon="cancel")
-
+        # For any vertical movement 
+        if desired_direction == list_movement_entries[0] or desired_direction == list_movement_entries[1]:
+            if desired_position > MAX_VERTICAL: 
+                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
+            
+        # For any horizontal movement
+        if desired_direction == list_movement_entries[2] or desired_direction == list_movement_entries[3]:
+            if desired_position > MAX_HORIZONTAL: 
+                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
+        
         # Combobox cannot be empty
-        if combobox_direction_1.get() == '':
-            message_combo1_no_input = CTkMessagebox(title="Error", message="Missing input for first direction", icon="cancel")
-        elif combobox_direction_2.get() == '':
-            message_combo2_no_input = CTkMessagebox(title="Error", message="Missing input for second direction", icon="cancel")
+        if desired_direction == "Choose movement":
+            error_msg = CTkMessagebox(title="Error", message="Missing desired direction", icon="cancel")
+        
+        if (error_msg == None):
+            if (button_submit.cget("text") == "Start Program"): 
+                button_submit.configure(text = "Stop Program", fg_color = '#EE3B3B')
 
-        if (button_submit.cget("text") == "Submit"):
-            button_submit.configure(text = "Stop", fg_color = '#EE3B3B')
-        else:
-            button_submit.configure(text = "Submit", fg_color = '#66CD00')
+                button_pause.configure(state = "normal")
+            else:
+                button_submit.configure(text = "Start Program", fg_color = '#66CD00', text_color = '#000000')
 
-        # Default thread
-        thread_auto_mode = Thread(target = auto_mode, args = (desired_position, desired_direction_1, desired_direction_2, label_reps, app.home_page_auto_mode_thread_event, ))
+                button_pause.configure(state = "disabled")
 
-        if (self.flag_auto_thread_created_once == False):
-            thread_auto_mode.start()
+            # Default thread
+            thread_auto_mode = Thread(target = auto_mode, args = (desired_position, desired_direction, desired_turns, desired_reps, list_objects[INDEX_LABEL_NUMBER_REPS_ACTUAL], app.auto_mode_thread_event, app.auto_mode_pause_thread_event, ))
 
-            self.flag_auto_thread_created_once = True
-        else:
-            if (self.flag_is_auto_thread_stopped == True):
-                app.home_page_auto_mode_thread_event.clear()
-
-                thread_auto_mode = None
-                thread_auto_mode = Thread(target = auto_mode, args = (desired_position, desired_direction_1, desired_direction_2, label_reps, app.home_page_auto_mode_thread_event, ))
+            if (self.flag_auto_thread_created_once == False):
                 thread_auto_mode.start()
 
-                self.flag_is_auto_thread_stopped = False
+                self.flag_auto_thread_created_once = True
             else:
-                app.home_page_auto_mode_thread_event.set()
+                if (self.flag_is_auto_thread_stopped == True):
+                    app.auto_mode_thread_event.clear()
 
-                self.flag_is_auto_thread_stopped = True
+                    thread_auto_mode = None
+                    thread_auto_mode = Thread(target = auto_mode, args = (desired_position, desired_direction, desired_turns, desired_reps, list_objects[INDEX_LABEL_NUMBER_REPS_ACTUAL], app.auto_mode_thread_event, app.auto_mode_pause_thread_event, ))
+                    thread_auto_mode.start()
 
-    def file_creator(self, filename, list_objects, frame_programs_list):
-        print(filename)
+                    self.flag_is_auto_thread_stopped = False
+                else:
+                    app.auto_mode_thread_event.set()
+
+                    self.flag_is_auto_thread_stopped = True
+
+    def file_creator(self, filename, frame_programs_list):
         complete_path_new_file = path_to_programs_folder + '\\' + filename + '.txt'
         name_file_to_show = filename.replace(path_to_programs_folder + '\\', '') + ".txt"
 
@@ -248,13 +252,13 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
         with open(complete_path_new_file, "w") as f:
             f.write('Movement sequence\n')
-            f.write(list_objects[INDEX_COMBOBOX_MOVEMENTS].get() + '\n')
+            f.write(self.list_objects_programs_page[INDEX_COMBOBOX_MOVEMENTS].get() + '\n')
 
             f.write('Amplitude (mm)\n')
-            f.write(list_objects[INDEX_ENTRY_DESIRED_POSITION].get() + '\n')
+            f.write(self.list_objects_programs_page[INDEX_ENTRY_DESIRED_POSITION].get() + '\n')
 
             f.write('Number of turns to do\n')
-            f.write(list_objects[INDEX_ENTRY_DESIRED_TURNS] + '\n')
+            f.write(self.list_objects_programs_page[INDEX_ENTRY_DESIRED_TURNS].get() + '\n')
 
             f.write('Vertical speed (mm/s)\n')
             f.write(str(vertical_speed) + '\n')
@@ -266,19 +270,21 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
             f.write(str(adaptor_speed) + '\n')
 
             f.write('Number of repetitions to execute\n')
-            f.write(list_objects[INDEX_ENTRY_NUMBER_REPS].get() + '\n')
+            f.write(self.list_objects_programs_page[INDEX_ENTRY_NUMBER_REPS_TO_DO].get() + '\n')
+
+            f.write('Name given to test\n')
+            f.write(filename + '\n')
 
             f.close()
         
             frame_programs_list.add_individual_program(filename)
-            frame_programs_list.list_buttons_programs_objects[-1].configure(command = lambda : self.button_select_program_callback(
-                                                                                                                                    frame_programs_list.list_buttons_programs_objects[-1],
-                                                                                                                                    list_objects))
-        
-    def button_select_program_callback(self, button_object, list_objects):
-        filename_to_open = button_object.cget("text") + '.txt'
+            frame_programs_list.list_buttons_programs_objects[-1].configure(command = lambda : self.button_select_program_callback(filename))
+            print(filename)
+
+    def button_select_program_callback(self, filename):
+        print(filename)
+        filename_to_open = filename + '.txt'
         complete_path = path_to_programs_folder + '\\' + filename_to_open
-        print(complete_path)
 
         values = []
         with open((complete_path), "r") as f:
@@ -287,34 +293,44 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                 separate_lines = line.split("\n")
                 values.append(separate_lines[0])
             
+            print(values)
             # Set the desired movement sequence combobox text
-            list_objects[INDEX_COMBOBOX_MOVEMENTS].set(values[0])
+            self.list_objects_programs_page[INDEX_COMBOBOX_MOVEMENTS].set(values[0])
 
             # Set the desired amplitude
-            list_objects[INDEX_ENTRY_DESIRED_POSITION].delete(0, len(list_objects[INDEX_ENTRY_DESIRED_POSITION].get()))
-            list_objects[INDEX_ENTRY_DESIRED_POSITION].insert(0, values[1])
+            self.list_objects_programs_page[INDEX_ENTRY_DESIRED_POSITION].delete(0, len(self.list_objects_programs_page[INDEX_ENTRY_DESIRED_POSITION].get()))
+            self.list_objects_programs_page[INDEX_ENTRY_DESIRED_POSITION].insert(0, values[1])
 
             # Set the desired number of turns
-            list_objects[INDEX_ENTRY_DESIRED_TURNS].delete(0, len(list_objects[INDEX_ENTRY_DESIRED_TURNS].get()))
-            list_objects[INDEX_ENTRY_DESIRED_POSITION].insert(0, values[2])
+            self.list_objects_programs_page[INDEX_ENTRY_DESIRED_TURNS].delete(0, len(self.list_objects_programs_page[INDEX_ENTRY_DESIRED_TURNS].get()))
+            self.list_objects_programs_page[INDEX_ENTRY_DESIRED_TURNS].insert(0, values[2])
 
             # Set the vertical speed slider
-            list_objects[INDEX_SLIDER_VERTICAL_SPEED].set(int(values[3]))
-
+            self.list_objects_programs_page[INDEX_SLIDER_VERTICAL_SPEED].set(int(values[3]))
 
             # Set the horizontal speed slider
-            list_objects[INDEX_SLIDER_HORIZONTAL_SPEED].set(int(values[4]))
+            self.list_objects_programs_page[INDEX_SLIDER_HORIZONTAL_SPEED].set(int(values[4]))
 
             # Set the adaptor speed slider
-            list_objects[INDEX_SLIDER_ADAPTOR_SPEED].set(int(values[5]))
+            self.list_objects_programs_page[INDEX_SLIDER_ADAPTOR_SPEED].set(int(values[5]))
 
-    def cleartext(self, var):
-        var.delete(0,"end")
+            # Set the filename
+            self.list_objects_programs_page[INDEX_ENTRY_FILENAME].delete(0, len(self.list_objects_programs_page[INDEX_ENTRY_FILENAME].get()))
+            self.list_objects_programs_page[INDEX_ENTRY_FILENAME].insert(0, values[7])
 
     def __init__(self, master, **kwargs):
         """! Initialisation of a Programs Page Frame
         """
         super().__init__(master, **kwargs)
+    
+        # Create frame for control buttons:
+        control_buttons_container = customtkinter.CTkFrame(self, width = 150, height = 100)
+        control_buttons_container.pack(
+                                    side    = tkinter.BOTTOM,
+                                    fill    = tkinter.X,
+                                    expand  = False,
+                                    padx    = 10,
+                                    pady    = 10)
 
         # Generate components
         # Position control input values
@@ -365,8 +381,13 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 70, "Horizontal speed")
         label_adaptor_speed_slider      = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 170, "Adaptor speed")
 
-        label_number_reps_indicator = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y + 170, "Number of reps: ")
-        entry_number_reps = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y + 200, "Enter here")
+        label_number_reps_to_do_indicator = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y + 170, "Number of reps: ")
+        entry_number_reps_to_do = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y + 200, "Enter here")
+
+        label_number_reps_actual_indicator = label_generate(control_buttons_container, 50 + 500, 25, "Number of reps done: ")
+        label_number_reps_actual_indicator.configure(width = 120, height = 50, fg_color = '#453D52')
+        label_number_reps_actual = label_generate(control_buttons_container, 50 + 650, 25, "0")
+        label_number_reps_actual.configure(width = 50, height = 50, fg_color = '#453D52')
 
         label_filename_entry = label_generate(self, ENTRY_POS_X, ENTRY_POS_Y - 30, "Enter filename: ")
         entry_filename = entry_generate(self, ENTRY_POS_X, ENTRY_POS_Y, "File name")
@@ -383,8 +404,13 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                     padx    = 10,
                                     pady    = 10)
 
+        # Associate a callback function for every program button
+        for i in range(len(programs_list_frame.list_buttons_programs_names)):
+            print(programs_list_frame.list_buttons_programs_names[i])
+            programs_list_frame.list_buttons_programs_objects[i].configure(command = lambda filename = programs_list_frame.list_buttons_programs_names[i] : self.button_select_program_callback(filename))
+
         # Add all useful objects for the save settings option
-        list_objects_programs_page = [combobox_movement,
+        self.list_objects_programs_page.extend((combobox_movement,
                                             entry_desired_position,
                                             entry_desired_turns,
                                             label_visualize_vertical_speed,
@@ -393,24 +419,34 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                             slider_vertical_speed,
                                             slider_horizontal_speed,
                                             slider_adaptor_speed,
-                                            entry_number_reps,
-                                            entry_filename]
-
-        # Associate a callback function for every program button
-        for i in range(len(programs_list_frame.list_buttons_programs_objects)):
-            programs_list_frame.list_buttons_programs_objects[i].configure(command = lambda : self.button_select_program_callback(
-                                                                                                                                    programs_list_frame.list_buttons_programs_objects[i],
-                                                                                                                                    list_objects_programs_page))
+                                            entry_number_reps_to_do,
+                                            label_number_reps_actual,
+                                            entry_filename))
 
         # Generate buttons
-        button_save_settings  = button_generate(self, BUTTON_SETTINGS_X, BUTTON_SETTINGS_Y, "Save settings")
+        button_save_settings  = button_generate(self, ENTRY_POS_X + 200, ENTRY_POS_Y, "Save settings")
         button_save_settings.configure(command = lambda : self.file_creator(
-                                                                            entry_filename.get(), 
-                                                                            list_objects_programs_page,
-                                                                            programs_list_frame))
+                                                                            entry_filename.get(),
+                                                                            programs_list_frame),
+                                                                            fg_color = '#FFC0CB', 
+                                                                            text_color = '#000000',
+                                                                            width = 150,
+                                                                            height = 50)
 
-        btn_submit  = button_generate(self, ENTRY_POS_X, ENTRY_POS_Y + 100, "Submit")
+        btn_pause  = button_generate(control_buttons_container, 50, 25, "Pause Program")
+        btn_pause.configure(command = lambda : self.button_pause_click(), 
+                                                                        fg_color = '#FFFF00', 
+                                                                        text_color = '#000000',
+                                                                        width = 150,
+                                                                        height = 50,
+                                                                        state = 'disabled')
+
+        btn_submit  = button_generate(control_buttons_container, 50 + 200, 25, "Start Program")
         btn_submit.configure(command = lambda : self.button_submit_click(
-                                                                         btn_submit, 
-                                                                         list_objects_programs_page), 
-                                                                         fg_color = '#66CD00')
+                                                                            btn_submit,
+                                                                            btn_pause,
+                                                                            self.list_objects_programs_page), 
+                                                                            fg_color = '#66CD00', 
+                                                                            text_color = '#000000',
+                                                                            width = 150,
+                                                                            height = 50)

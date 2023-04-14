@@ -66,7 +66,57 @@ def determine_trajectory_parameters(directions):
 
         return id, command_a, command_b
 
-def auto_mode(position_to_reach, directions, number_of_turns, label_reps, stop_event):
+def auto_mode(position_to_reach, directions, number_of_turns, number_reps_to_do, label_reps_actual, stop_event, pause_event):
+    id, command_a, command_b = determine_trajectory_parameters(directions)
+    counter_repetitions = 0
+
+    if (id == ID_MOTOR_ADAPT):
+        # Number of turns is multiplied by 100 to account for the fact that it is necessary to be able to insert up to 2 digits turn precision
+        data_to_send = int(number_of_turns * 100)
+        print(data_to_send)
+    else:
+        data_to_send = position_to_reach
+
+    # Start auto mode trajectory
+    transmit_serial_data(
+                                                id,
+                                                command_a,
+                                                MODE_POSITION_CONTROL,
+                                                data_to_send,
+                                                g_list_connected_device_info)
+
+    current_checkpoint_to_reach = CHECKPOINT_B
+
+    while ((stop_event.is_set() != True) and (counter_repetitions <= number_reps_to_do)):
+        if (pause_event.is_set() != True):
+            if ((g_list_message_info[INDEX_STATUS_MOTOR] == MOTOR_STATE_AUTO_END_OF_TRAJ) and (current_checkpoint_to_reach == CHECKPOINT_B)):
+                transmit_serial_data(
+                                                    id,
+                                                    command_b,
+                                                    MODE_POSITION_CONTROL,
+                                                    data_to_send,
+                                                    g_list_connected_device_info)
+
+                current_checkpoint_to_reach = CHECKPOINT_A
+
+            elif ((g_list_message_info[INDEX_STATUS_MOTOR] == MOTOR_STATE_AUTO_END_OF_TRAJ) and (current_checkpoint_to_reach == CHECKPOINT_A)):
+                transmit_serial_data(
+                                                    id,
+                                                    command_a,
+                                                    MODE_POSITION_CONTROL,
+                                                    data_to_send,
+                                                    g_list_connected_device_info)
+
+                current_checkpoint_to_reach = CHECKPOINT_B
+                counter_repetitions = counter_repetitions + 1
+
+            label_reps_actual.configure(text = str(counter_repetitions))
+
+            # Sleep for 1 second to not overflow the serial buffer
+            time.sleep(1)
+
+
+def auto_mode_test(position_to_reach, directions, number_of_turns, stop_event):
     id, command_a, command_b = determine_trajectory_parameters(directions)
     counter_repetitions = 0
 
@@ -98,18 +148,9 @@ def auto_mode(position_to_reach, directions, number_of_turns, label_reps, stop_e
 
             current_checkpoint_to_reach = CHECKPOINT_A
 
-        elif ((g_list_message_info[INDEX_STATUS_MOTOR] == MOTOR_STATE_AUTO_END_OF_TRAJ) and (current_checkpoint_to_reach == CHECKPOINT_A)):
-            transmit_serial_data(
-                                                id,
-                                                command_a,
-                                                MODE_POSITION_CONTROL,
-                                                data_to_send,
-                                                g_list_connected_device_info)
-
-            current_checkpoint_to_reach = CHECKPOINT_B
-            counter_repetitions = counter_repetitions + 1
-
-        label_reps.configure(text = str(counter_repetitions))
-
         # Sleep for 1 second to not overflow the serial buffer
         time.sleep(1)
+
+        # Break condition
+        if (current_checkpoint_to_reach == CHECKPOINT_A):
+            break
