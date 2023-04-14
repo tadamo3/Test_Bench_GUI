@@ -127,7 +127,8 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
     list_objects_programs_page = []
 
     flag_is_auto_thread_stopped = False
-    flag_auto_thread_created_once = False
+    flag_is_auto_thread_created_once = False
+    flag_is_pause_requested = False
 
     def slider_speed_callback(self, slider_value, list_slider_info, slider_type, label_slider, list_com_device_info):
         """! Every time a new value is set, sends the updated speed value to the device
@@ -182,8 +183,17 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
                 list_slider_info[SLIDER_PREV_VALUE_INDEX] = slider_value
     
-    def button_pause_click(self):
-        app.auto_mode_pause_thread_event.set()
+    def button_pause_click(self, button_pause):
+        if (self.flag_is_pause_requested == False):
+            app.auto_mode_pause_thread_event.set()
+
+            button_pause.configure(text = "Resume Program", fg_color = '#66CD00', text_color = '#000000')
+            self.flag_is_pause_requested = True
+        else:
+            app.auto_mode_pause_thread_event.clear()
+            button_pause.configure(text = "Pause Program", fg_color = '#FFFF00')
+
+            self.flag_is_pause_requested = False
 
     def button_submit_click(self, button_submit, button_pause, list_objects):
         desired_position = int(list_objects[INDEX_ENTRY_DESIRED_POSITION].get())
@@ -224,10 +234,10 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
             # Default thread
             thread_auto_mode = Thread(target = auto_mode, args = (desired_position, desired_direction, desired_turns, desired_reps, list_objects[INDEX_LABEL_NUMBER_REPS_ACTUAL], app.auto_mode_thread_event, app.auto_mode_pause_thread_event, ))
 
-            if (self.flag_auto_thread_created_once == False):
+            if (self.flag_is_auto_thread_created_once == False):
                 thread_auto_mode.start()
 
-                self.flag_auto_thread_created_once = True
+                self.flag_is_auto_thread_created_once = True
             else:
                 if (self.flag_is_auto_thread_stopped == True):
                     app.auto_mode_thread_event.clear()
@@ -404,7 +414,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                     padx    = 10,
                                     pady    = 10)
 
-        # Associate a callback function for every program button
+        # Associate a callback function for every program button from the Program List Frame
         for i in range(len(programs_list_frame.list_buttons_programs_names)):
             print(programs_list_frame.list_buttons_programs_names[i])
             programs_list_frame.list_buttons_programs_objects[i].configure(command = lambda filename = programs_list_frame.list_buttons_programs_names[i] : self.button_select_program_callback(filename))
@@ -434,7 +444,8 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                                                             height = 50)
 
         btn_pause  = button_generate(control_buttons_container, 50, 25, "Pause Program")
-        btn_pause.configure(command = lambda : self.button_pause_click(), 
+        btn_pause.configure(command = lambda : self.button_pause_click(
+                                                                        btn_pause), 
                                                                         fg_color = '#FFFF00', 
                                                                         text_color = '#000000',
                                                                         width = 150,

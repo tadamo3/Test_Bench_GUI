@@ -114,6 +114,9 @@ def auto_mode(position_to_reach, directions, number_of_turns, number_reps_to_do,
 
             # Sleep for 1 second to not overflow the serial buffer
             time.sleep(1)
+        
+        # Sleep for 1 second every loop of pause to not freeze App
+        time.sleep(1)
 
 
 def auto_mode_test(position_to_reach, directions, number_of_turns, stop_event):
