@@ -143,12 +143,6 @@ def receive_serial_data(list_message_info, list_com_device_info):
                 " Status movement: "     + str(list_message_info[INDEX_STATUS_MOVEMENT_MOTOR]) +
                 " State: "               + str(list_message_info[INDEX_STATUS_MOTOR])
             )
-        """
-        logs = open(path_logs, 'a')
-        logs.write(str(list_message_info[INDEX_MOTOR_POSITION]))
-        logs.write('\n')
-        logs.close()
-        """
 
 def transmit_serial_data(id, command, mode, data, list_com_device_info):
     """! Builds the desired message to transmit and writes it to the microcontroler
