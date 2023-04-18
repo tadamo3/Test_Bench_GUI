@@ -10,10 +10,11 @@ import tkinter
 import customtkinter
 import time
 from threading import Event
+from serial.tools import list_ports
 
-import common
+from common import *
 import home_page
-import serial_funcs
+from serial_funcs import *
 import manual_control
 import programs_page
 
@@ -25,10 +26,17 @@ APP_HEIGHT = 1500
 ## Indexes to access different pages
 INDEX_HOME      = 0
 INDEX_PROGRAMS  = 1
-INDEX_LOGS      = 2
+#INDEX_LOGS      = 2
+
+## Info about the combobox ports
+CBBOX_COM_PORTS_X   = 20
+CBBOX_COM_PORTS_Y   = 20
+CBBOX_WIDTH         = 175
 
 home_page_stop_threads_event = Event()
-home_page_auto_mode_thread_event = Event()
+auto_mode_thread_event = Event()
+auto_mode_pause_thread_event = Event()
+
 
 # Functions
 def frame_selector(frame_to_init):
@@ -57,19 +65,58 @@ def frame_selector(frame_to_init):
                                         padx        = 10, 
                                         pady        = 10)
 
+def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
+        """! Creates a combobox to list out all COM ports currently used by computer
+        @param frame                    Frame on which the combobox will appear
+        @param com_port_placeholder     StringVar to contain the combobox current text
+        @return An instance of the created combobox
+        """
+        com_ports = list_ports.comports()
+        list_com_ports = []
+        
+        if (len(com_ports) != 0):
+            for port in com_ports:
+                list_com_ports.append(port.name)
+        else:
+            list_com_ports += ["No COM Port detected"]
+
+        combobox = customtkinter.CTkComboBox(
+                                            master      = frame,
+                                            width       = CBBOX_WIDTH,
+                                            values      = list_com_ports,
+                                            variable    = strvar_com_port_placeholder)
+        combobox.place(
+                        x = CBBOX_COM_PORTS_X,
+                        y = CBBOX_COM_PORTS_Y)
+
+        return combobox
+
+def button_com_ports_click(button_com_port, combobox_com_port, list_com_device_info):
+    """! On click, prints out the current value of the COM ports combobox
+    @param combobox_com_port    StringVar containing the current COM port selected
+    @param list_com_device_info Notable information for all connected devices
+    """
+    if (combobox_com_port != ""):
+        print("COM port to be connected: ", combobox_com_port)
+        list_com_device_info[0] = connect_to_port(combobox_com_port)
+
+        button_com_port.configure(state = "disabled")
+    else:
+        print("No COM port selected")
+
 # Classes
 class App(customtkinter.CTk):
     """! App class for the Zimmer Test Bench\n
     Defines the components to select different pages
     """
     ## All frames to be shown - The list purpose is to simplify index accessing
-    list_frames = ["Home", "Programs", "Logs"]
-    dict_frames = {"Home" : None, "Programs" : None, "Logs" : None}
+    list_frames = ["Home", "Programs"]
+    dict_frames = {"Home" : None, "Programs" : None}
 
     def __init__(self, name_of_window):
         """! Initialisation of a new App object and generation of all related frames
         @param name_of_window     Name to be given to the App window
-        @return An instance of the App window containing all different populated frames to be shown
+        @return An instance of the App window containing all different poSpulated frames to be shown
         """
         super().__init__()
 
@@ -77,7 +124,7 @@ class App(customtkinter.CTk):
         self.title(name_of_window)
 
         ## Set appearance of the App window
-        common.set_appearance("Dark", "blue")
+        set_appearance("Dark", "blue")
 
         ## Shape and size of the App window
         self.state('zoomed')
@@ -87,7 +134,7 @@ class App(customtkinter.CTk):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         ## Left side panel creation for frame selection
-        left_side_container = customtkinter.CTkFrame(self, width=150)
+        left_side_container = customtkinter.CTkFrame(self, width = 150)
         left_side_container.pack(
                                     side    = tkinter.LEFT,
                                     fill    = tkinter.Y,
@@ -95,10 +142,31 @@ class App(customtkinter.CTk):
                                     padx    = 10,
                                     pady    = 10)
 
+        ## Upper panel creation for connection settings
+        connection_settings_container = customtkinter.CTkFrame(self, width = 150, height = 100)
+        connection_settings_container.pack(
+                                            side    = tkinter.TOP,
+                                            fill    = tkinter.X,
+                                            expand  = False,
+                                            padx    = 10,
+                                            pady    = 10)
+        
+        ## Create button for connection settings
+        strvar_current_com_port = customtkinter.StringVar(self)
+
+        # Generate all comboboxes
+        cbbox_com_ports = combobox_com_ports_generate(connection_settings_container, strvar_current_com_port)
+
+        btn_com_ports = button_generate(connection_settings_container, (CBBOX_COM_PORTS_X * 12), CBBOX_COM_PORTS_Y, "Connect")
+        btn_com_ports.configure(command = lambda : button_com_ports_click(
+                                                                            btn_com_ports,
+                                                                            cbbox_com_ports.get(),
+                                                                            g_list_connected_device_info))
+
         ## Instanciate the different frames
         self.dict_frames[self.list_frames[INDEX_HOME]]      = home_page.HomePageFrame(master = self, fg_color="#1a1822")
         self.dict_frames[self.list_frames[INDEX_PROGRAMS]]  = programs_page.ProgramsPageFrame(master = self, fg_color="#1a1822")
-        self.dict_frames[self.list_frames[INDEX_LOGS]]      = customtkinter.CTkFrame(master = self, fg_color="#1a1822")
+        #self.dict_frames[self.list_frames[INDEX_LOGS]]      = customtkinter.CTkFrame(master = self, fg_color="#1a1822")
 
         ## Instanciate the frame selector buttons and associate them with each frame
         list_btn_selector = []
