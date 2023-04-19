@@ -63,57 +63,71 @@ def close_window(window_to_close):
     """
     window_to_close.destroy()
 
-def button_generate(self, button_pos_x, button_pos_y, text):
+def button_generate(self, row, column, rowspan, columnspan, padx, pady, text):
         button = customtkinter.CTkButton(
                                             master = self,
                                             text = text)
         
-        button.place(
-                        x = button_pos_x,
-                        y = button_pos_y)
+        button.grid(
+                        row = row,
+                        column = column,
+                        rowspan = rowspan,
+                        columnspan = columnspan,
+                        padx = padx,
+                        pady = pady,
+                        sticky = 'nsew'
+                       )
 
-        
         return button
-    
-def combobox_generate(self, combobox_pos_x, combobox_pos_y, text): 
-    combobox = customtkinter.CTkComboBox(
-                                            master = self,
-                                            values = text, 
-                                            dynamic_resizing = True
-                                        )
 
-def slider_generate(self, slider_pos_x, slider_pos_y, range):
+def slider_generate(self, row, column, rowspan, columnspan, padx, pady, range):
     slider = customtkinter.CTkSlider(
                                         master          = self,
                                         from_           = 0,
                                         to              = range,
-                                        number_of_steps = range)
-    slider.place(
-                    x = slider_pos_x,
-                    y = slider_pos_y)
+                                        number_of_steps = range,
+                                        height          = 10)
+    slider.grid(
+                    row         = row,
+                    column      = column,
+                    rowspan     = rowspan,
+                    columnspan  = columnspan,
+                    padx        = padx,
+                    pady        = pady,
+                    sticky      = 'nsew')
 
     return slider
 
-def label_generate(self, label_pos_x, label_pos_y, text):
+def label_generate(self, row, column, rowspan, columnspan, padx, pady, text):
         label = customtkinter.CTkLabel(
                                         master          = self,
                                         text            = text,
                                         corner_radius   = 8)
         
-        label.place(
-                    x = label_pos_x,
-                    y = label_pos_y)
+        label.grid(
+                    row         = row,
+                    column      = column,
+                    rowspan     = rowspan,
+                    columnspan  = columnspan,
+                    padx        = padx,
+                    pady        = pady,
+                    sticky      = 'nsew')
 
         return label
 
-def entry_generate(self, label_pos_x, label_pos_y, text):
+def entry_generate(self, row, column, rowspan, columnspan, padx, pady, text):
     entry = customtkinter.CTkEntry(
                                     master = self,
                                     placeholder_text= text)
     
-    entry.place(
-                x = label_pos_x,
-                y = label_pos_y)
+    entry.grid(
+                    row         = row,
+                    column      = column,
+                    rowspan     = rowspan,
+                    columnspan  = columnspan,
+                    padx        = padx,
+                    pady        = pady,
+                    sticky      = 'nsew')
     
     return entry
 

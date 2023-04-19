@@ -20,10 +20,10 @@ import programs_page
 
 # Global constants
 ## The width of the App window
-APP_WIDTH = 1450
+APP_WIDTH = 1920
 
 ## The height of the App window
-APP_HEIGHT = 1500
+APP_HEIGHT = 1080
 
 ## Index to access the home page in the list of frames
 INDEX_HOME      = 0
@@ -50,7 +50,6 @@ auto_mode_thread_event = Event()
 ## Thread event to pause the automatic mode position control
 auto_mode_pause_thread_event = Event()
 
-
 # Functions
 def frame_selector(frame_to_init):
     """! Puts a new frame on top of the current frame and binds related keys to the frame's functionnalities
@@ -59,7 +58,7 @@ def frame_selector(frame_to_init):
     # Clear out every possible frame that is not the frame to initialize
     for i in range(len(App.dict_frames)):
         if (App.list_frames[i] != frame_to_init):
-                App.dict_frames[App.list_frames[i]].pack_forget()
+                App.dict_frames[App.list_frames[i]].grid_forget()
 
     # Bind / Unbind buttons related to the frames
     func_id = None
@@ -70,13 +69,12 @@ def frame_selector(frame_to_init):
         app_window.unbind('<KeyPress>', func_id)
 
     # Initialize the correct frame
-    App.dict_frames[frame_to_init].pack(
-                                        in_         = app_window,
-                                        side        = tkinter.TOP, 
-                                        fill        = tkinter.BOTH,
-                                        expand      = True, 
-                                        padx        = 10, 
-                                        pady        = 10)
+    App.dict_frames[frame_to_init].grid(
+                                        row     = 1,
+                                        column  = 1,
+                                        padx    = 20,
+                                        pady    = 20,
+                                        sticky  = 'nsew')
 
 def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
         """! Creates a combobox to list out all COM ports currently used by computer
@@ -98,9 +96,14 @@ def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
                                             width       = CBBOX_WIDTH,
                                             values      = list_com_ports,
                                             variable    = strvar_com_port_placeholder)
-        combobox.place(
-                        x = CBBOX_COM_PORTS_X,
-                        y = CBBOX_COM_PORTS_Y)
+        combobox.grid(
+                        row         = 0,
+                        column      = 0,
+                        rowspan     = 1,
+                        columnspan  = 1,
+                        padx        = 20,
+                        pady        = 20,
+                        sticky      = 'nsew')
 
         return combobox
 
@@ -147,23 +150,30 @@ class App(customtkinter.CTk):
         # Closing procedure for App window
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        ## Left side panel creation for frame selection
-        left_side_container = customtkinter.CTkFrame(self, width = 150)
-        left_side_container.pack(
-                                    side    = tkinter.LEFT,
-                                    fill    = tkinter.Y,
-                                    expand  = False,
-                                    padx    = 10,
-                                    pady    = 10)
+        # Configure the grid system with specific weights for the main window
+        self.grid_rowconfigure(0, weight = 0)
+        self.grid_rowconfigure(1, weight = 1)
+        self.grid_columnconfigure(0, weight = 0)
+        self.grid_columnconfigure(1, weight = 1)
+
+        # Create all frames to position different componenets in them
+        left_side_container = customtkinter.CTkFrame(self)
+        left_side_container.grid(
+                                    row     = 0,
+                                    column  = 0,
+                                    rowspan = 2,
+                                    padx    = 20,
+                                    pady    = 20,
+                                    sticky  = "nsew")
 
         # Upper panel creation for connection settings
-        connection_settings_container = customtkinter.CTkFrame(self, width = 150, height = 100)
-        connection_settings_container.pack(
-                                            side    = tkinter.TOP,
-                                            fill    = tkinter.X,
-                                            expand  = False,
-                                            padx    = 10,
-                                            pady    = 10)
+        connection_settings_container = customtkinter.CTkFrame(self)
+        connection_settings_container.grid(
+                                            row     = 0, 
+                                            column  = 1, 
+                                            padx    = 20, 
+                                            pady    = 20, 
+                                            sticky  = "nsew")
         
         # Create button for connection settings
         strvar_current_com_port = customtkinter.StringVar(self)
@@ -172,7 +182,7 @@ class App(customtkinter.CTk):
         cbbox_com_ports = combobox_com_ports_generate(connection_settings_container, strvar_current_com_port)
 
         # Genreate all buttons
-        btn_com_ports = button_generate(connection_settings_container, (CBBOX_COM_PORTS_X * 12), CBBOX_COM_PORTS_Y, "Connect")
+        btn_com_ports = button_generate(connection_settings_container, 0, 1, 1, 1, 20, 20, "Connect")
         btn_com_ports.configure(command = lambda : button_com_ports_click(
                                                                             btn_com_ports,
                                                                             cbbox_com_ports.get(),
@@ -190,9 +200,12 @@ class App(customtkinter.CTk):
                                                             text        = self.list_frames[i],
                                                             hover_color = "red",
                                                             command     = lambda frame_to_init=self.list_frames[i] : frame_selector(frame_to_init)))
-            list_btn_selector[i].place(
-                                        x = 5,
-                                        y = i * 50)
+            list_btn_selector[i].grid(
+                                        row     = i, 
+                                        column  = 0, 
+                                        padx    = 20, 
+                                        pady    = 50, 
+                                        sticky  = "nsew")
 
     def on_closing(self):
         """! Procedure on window closing to kill all remaining threads

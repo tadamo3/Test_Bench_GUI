@@ -15,7 +15,7 @@ from PIL import Image, ImageTk
 import time
 
 from serial_funcs import *
-from automatic_control import auto_mode, auto_mode_test, list_movement_entries
+from automatic_control import AutomaticMode
 from common import *
 import app
 
@@ -170,16 +170,18 @@ class HomePageFrame(customtkinter.CTkFrame):
     def button_back_click(self, btn_back, list):
         # This function is utilized when the back button is clicked 
         # Destroy all previous components generated beforehand
-        btn_back.place_forget() 
+        btn_back.grid_forget() 
 
         for i in range(len(list)):
-            list[i].place_forget()
+            list[i].grid_forget()
 
-        # Generate button modes
-        btn_manual_mode = button_generate(self, BUTTON_MANUAL_MODE_X, BUTTON_MANUAL_MODE_Y, "Manual Mode")
-        btn_manual_mode.configure(command=lambda:self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
+        self.grid_rowconfigure((0, 1), weight = 0)
+        self.grid_columnconfigure(0, weight = 0)
+    
+        btn_manual_mode = button_generate(self, 0, 0, 1, 1, 20, 20, "Manual Mode")
+        btn_auto_mode   = button_generate(self, 1, 0, 1, 1, 20, 20, "Automatic mode")
 
-        btn_auto_mode = button_generate(self, BUTTON_AUTO_MODE_X, BUTTON_AUTO_MODE_Y, "Automatic mode")
+        btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
         btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
 
     def button_submit_test_click(self, button_submit, entry_position, entry_turns, combobox_direction):
@@ -196,17 +198,17 @@ class HomePageFrame(customtkinter.CTkFrame):
 
         # Cannot exceed max value
         # For any vertical movement 
-        if desired_direction == list_movement_entries[0] or desired_direction == list_movement_entries[1]:
+        if desired_direction == AutomaticMode.list_movement_entries[0] or desired_direction == AutomaticMode.list_movement_entries[1]:
             if desired_position > MAX_VERTICAL: 
                 error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
             
         # For any horizontal movement
-        if desired_direction == list_movement_entries[2] or desired_direction == list_movement_entries[3]:
+        if desired_direction == AutomaticMode.list_movement_entries[2] or desired_direction == AutomaticMode.list_movement_entries[3]:
             if desired_position > MAX_HORIZONTAL: 
                 error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
 
         # For any screwing movement
-        if desired_direction == list_movement_entries[4] or desired_direction == list_movement_entries[5]:
+        if desired_direction == AutomaticMode.list_movement_entries[4] or desired_direction == AutomaticMode.list_movement_entries[5]:
             if desired_position > MAX_SCREW: 
                 error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
         
@@ -215,13 +217,13 @@ class HomePageFrame(customtkinter.CTkFrame):
             error_msg = CTkMessagebox(title="Error", message="Missing desired direction", icon="cancel")
         
         if (error_msg == None):
-            if (button_submit.cget("text") == "Test One Repetition"): 
+            if (button_submit.cget("text") == "Test One Repetition"):
                 button_submit.configure(text = "Stop test", fg_color = '#EE3B3B')
             else:
                 button_submit.configure(text = "Test One Repetition", fg_color = '#66CD00', text_color = '#000000')
 
             # Default thread
-            thread_auto_mode = Thread(target = auto_mode_test, args = (desired_position, desired_direction, desired_turns, app.home_page_auto_mode_thread_event, ))
+            thread_auto_mode = Thread(target = AutomaticMode.auto_mode_test, args = (desired_position, desired_direction, desired_turns, app.home_page_stop_threads_event, ))
 
             if (self.flag_auto_thread_created_once == False):
                 thread_auto_mode.start()
@@ -229,56 +231,70 @@ class HomePageFrame(customtkinter.CTkFrame):
                 self.flag_auto_thread_created_once = True
             else:
                 if (self.flag_is_auto_thread_stopped == True):
-                    app.home_page_auto_mode_thread_event.clear()
+                    app.home_page_stop_threads_event.clear()
 
                     thread_auto_mode = None
-                    thread_auto_mode = Thread(target = auto_mode_test, args = (desired_position, desired_direction, desired_turns, app.home_page_auto_mode_thread_event, ))
+                    thread_auto_mode = Thread(target = AutomaticMode.auto_mode_test, args = (desired_position, desired_direction, desired_turns, app.home_page_stop_threads_event, ))
                     thread_auto_mode.start()
 
                     self.flag_is_auto_thread_stopped = False
                 else:
-                    app.home_page_auto_mode_thread_event.set()
+                    app.home_page_stop_threads_event.set()
 
                     self.flag_is_auto_thread_stopped = True
 
 
     def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode):
-        # Destroy the modes buttons
-        button_manual_mode.place_forget()
-        button_auto_mode.place_forget()
+        button_manual_mode.grid_forget()
+        button_auto_mode.grid_forget()
 
-        # Generate components
-        # Label automatic mode 
-        
-        label_auto = customtkinter.CTkLabel(master = self, 
-                                            text_color = "dodger blue", 
-                                            font = ("Arial",40),
-                                            text = "AUTOMATIC MODE") 
-    
-        label_auto.place(x=LABEL_MODE_X,y=LABEL_MODE_Y)
+        self.rowconfigure((0, 6), weight = 0)
+        self.rowconfigure(7, weight = 1)
+        self.columnconfigure((0, 3), weight = 0)
+        self.columnconfigure((4, 6), weight = 2)
+        self.columnconfigure((7, 8), weight = 0)
+
+        # Generate manual label 
+        label_auto = customtkinter.CTkLabel(master    = self, 
+                                            text_color  = "dodger blue", 
+                                            font        = ("Arial",40),
+                                            text        = "AUTOMATIC MODE") 
+        label_auto.grid(
+                            row         = 0,
+                            column      = 0,
+                            rowspan     = 1,
+                            columnspan  = 4,
+                            padx        = 20,
+                            pady        = 20,
+                            sticky      = 'nsew')
 
         # Position control input values
-        label_movement = label_generate(self,COMBOBOX_MOVEMENT_1_X,COMBOBOX_MOVEMENT_1_Y-30, "Movement : ")
+        label_movement = label_generate(self, 1, 1, 1, 1, 20, (20, 5), "Movement : ")
         combobox_movement = customtkinter.CTkOptionMenu(
                                                         master = self,
-                                                        values = list_movement_entries, 
+                                                        values = AutomaticMode.list_movement_entries, 
                                                         dynamic_resizing = False)
         combobox_movement.set("Choose movement")
-        combobox_movement.place(x = COMBOBOX_MOVEMENT_1_X, y = COMBOBOX_MOVEMENT_1_Y)
+        combobox_movement.grid(
+                                row         = 2,
+                                column      = 1,
+                                rowspan     = 1,
+                                columnspan  = 1,
+                                padx        = 20,
+                                pady        = (0, 20),
+                                sticky      = 'nsew')
 
-        entry_desired_position = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y, "Enter here")
-        label_desired_position = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y - 30, "Amplitude (mm) : ")
+        label_desired_position = label_generate(self, 1, 2, 1, 1, 20, (20, 5), "Amplitude (mm)")
+        entry_desired_position = entry_generate(self, 2, 2, 1, 1, 20, (0, 20), "Enter here")
 
-        entry_desired_turns = entry_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y+100, "Enter here")
-        label_desired_turns = label_generate(self, COMBOBOX_MOVEMENT_1_X + 200, COMBOBOX_MOVEMENT_1_Y +100 - 30, "Number of turns : ")
+        label_desired_turns = label_generate(self, 3, 2, 1, 1, 20, (20, 5), "Number of turns")
+        entry_desired_turns = entry_generate(self, 4, 2, 1, 1, 20, (0, 20), "Enter here")
 
-        label_speed = label_generate(self, COMBOBOX_MOVEMENT_1_X+400, COMBOBOX_MOVEMENT_1_Y - 30 , "Choose speed : ")
+        label_visualize_vertical_speed      = label_generate(self, 2, 7, 1, 1, (5, 20), 20, (str(self.list_slider_vertical_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + "   mm/s"))
+        label_visualize_horizontal_speed    = label_generate(self, 4, 7, 1, 1, (5, 20), 20, (str(self.list_slider_horizontal_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + "   mm/s"))
+        label_visualize_rotation_speed      = label_generate(self, 6, 7, 1, 1, (5, 20), 20, (str(self.list_slider_adaptor_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + "   turn/s"))
 
-        label_visualize_vertical_speed      = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y + 20, (str(self.list_slider_vertical_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " mm/s"))
-        label_visualize_horizontal_speed    = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y + 100, (str(self.list_slider_horizontal_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " mm/s"))
-        label_visualize_rotation_speed      = label_generate(self, COMBOBOX_MOVEMENT_1_X + 600, COMBOBOX_MOVEMENT_1_Y + 180, (str(self.list_slider_adaptor_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " turn/s"))
-
-        slider_vertical_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 40, SLIDER_VERTICAL_SPEED_RANGE_MAX)
+        slider_vertical_speed = slider_generate(self, 2, 4, 1, 3, 5, 5, SLIDER_VERTICAL_SPEED_RANGE_MAX)
         slider_vertical_speed.set(self.list_slider_vertical_info[SLIDER_PREV_VALUE_INDEX])
         slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
@@ -287,7 +303,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_vertical_speed,
                                                                                                                                 g_list_connected_device_info))
 
-        slider_horizontal_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 120, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
+        slider_horizontal_speed = slider_generate(self, 4, 4, 1, 3, 5, 5, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
         slider_horizontal_speed.set(self.list_slider_horizontal_info[SLIDER_PREV_VALUE_INDEX])
         slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
@@ -296,7 +312,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_horizontal_speed,
                                                                                                                                 g_list_connected_device_info))
 
-        slider_adaptor_speed = slider_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 200, SLIDER_ADAPTOR_SPEED_RANGE_MAX)
+        slider_adaptor_speed = slider_generate(self, 6, 4, 1, 3, 5, 5, SLIDER_ADAPTOR_SPEED_RANGE_MAX)
         slider_adaptor_speed.set(self.list_slider_adaptor_info[SLIDER_PREV_VALUE_INDEX])
         slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
@@ -305,11 +321,26 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_rotation_speed,
                                                                                                                                 g_list_connected_device_info))
 
-        label_vertical_speed_slider     = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y - 30, "Vertical Speed")
-        label_horizontal_speed_slider   = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 70, "Horizontal speed")
-        label_adaptor_speed_slider      = label_generate(self, COMBOBOX_MOVEMENT_1_X + 400, COMBOBOX_MOVEMENT_1_Y + 170, "Adaptor speed")
+        label_vertical_speed_slider     = label_generate(self, 1, 4, 1, 1, 20, (20, 5), "Vertical Speed")
+        label_horizontal_speed_slider   = label_generate(self, 3, 4, 1, 1, 20, (20, 5), "Horizontal speed")
+        label_adaptor_speed_slider      = label_generate(self, 5, 4, 1, 1, 20, (20, 5), "Adaptor speed")
 
-        btn_submit_test  = button_generate(self, COMBOBOX_MOVEMENT_1_X + 800, COMBOBOX_MOVEMENT_1_Y + 50, "Test One Repetition")
+        # Create frame for control buttons
+        control_buttons_container = customtkinter.CTkFrame(self)
+        control_buttons_container.grid(
+                                        row         = 7,
+                                        column      = 0,
+                                        rowspan     = 1,
+                                        columnspan  = 9,
+                                        padx        = 20,
+                                        pady        = 20,
+                                        sticky      = 'nsew')
+        
+        # Configure the grid system with specified weights for the control button frame
+        control_buttons_container.grid_rowconfigure(0, weight = 1)
+        control_buttons_container.grid_columnconfigure(0, weight = 1)
+
+        btn_submit_test  = button_generate(control_buttons_container, 0, 0, 1, 1, 20, 20, "Test One Repetition")
         btn_submit_test.configure(
                                     command = lambda : self.button_submit_test_click(btn_submit_test, entry_desired_position, entry_desired_turns, combobox_movement), 
                                     fg_color = '#66CD00', 
@@ -326,46 +357,56 @@ class HomePageFrame(customtkinter.CTkFrame):
                                 slider_adaptor_speed,
                                 combobox_movement,
                                 btn_submit_test,
-                                label_auto, 
                                 label_desired_turns,
                                 entry_desired_turns,
+                                label_auto,
                                 label_movement,
-                                label_speed,
                                 label_horizontal_speed_slider,
                                 label_visualize_vertical_speed, 
                                 label_visualize_horizontal_speed,
                                 label_vertical_speed_slider,
                                 label_adaptor_speed_slider,
-                                label_visualize_rotation_speed]
+                                label_visualize_rotation_speed,
+                                control_buttons_container]
 
-        btn_back  = button_generate(self, BUTTON_BACK_VALUE_X, BUTTON_BACK_VALUE_Y, "Back")
+        btn_back = button_generate(self, 0, 8, 1, 1, 20, 20, "Back")
         btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
 
     def button_manual_mode_click(self, button_manual_mode, button_auto_mode):
-        # This function is utilized when the manual mode is activated (clicked by user)
-        # Delete mode selection buttons
-        button_manual_mode.place_forget()
-        button_auto_mode.place_forget()
+        button_manual_mode.grid_forget()
+        button_auto_mode.grid_forget()
+
+        # Configure the grid system with specific weights for the manual mode of the home page
+        self.rowconfigure((0, 6), weight = 0)
+        self.columnconfigure((0, 3), weight = 0)
+        self.columnconfigure((4, 6), weight = 2)
+        self.columnconfigure((7, 8), weight = 0)
 
         # Generate manual label 
-        label_manual = customtkinter.CTkLabel(master = self, 
-                                            text_color = "dodger blue", 
-                                            font = ("Arial",40),
-                                            text = "MANUAL MODE") 
-    
-        label_manual.place(x=LABEL_MODE_X, y=LABEL_MODE_Y)
+        label_manual = customtkinter.CTkLabel(master    = self, 
+                                            text_color  = "dodger blue", 
+                                            font        = ("Arial",40),
+                                            text        = "MANUAL MODE") 
+        label_manual.grid(
+                            row         = 0,
+                            column      = 0,
+                            rowspan     = 1,
+                            columnspan  = 4,
+                            padx        = 20,
+                            pady        = 20,
+                            sticky      = 'nsew')
 
         # Generate direction buttons
-        btn_direction_up = button_generate(self, BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y - 100), "Going Up")
+        btn_direction_up = button_generate(self, 1, 1, 2, 2, 20, 20, "Going Up")
         btn_direction_up.configure(fg_color = '#3D59AB', state = "disabled")
             
-        btn_direction_down = button_generate(self, BUTTON_DIRECTION_CENTER_X, (BUTTON_DIRECTION_CENTER_Y + 100), "Going Down")
+        btn_direction_down = button_generate(self, 5, 1, 2, 2, 20, 20, "Going Down")
         btn_direction_down.configure(fg_color = '#3D59AB', state = "disabled")
 
-        btn_direction_left = button_generate(self, (BUTTON_DIRECTION_CENTER_X - 100), BUTTON_DIRECTION_CENTER_Y, "Going Left")
+        btn_direction_left = button_generate(self, 3, 0, 2, 2, 20, 20, "Going Left")
         btn_direction_left.configure(fg_color = '#3D59AB', state = "disabled")
 
-        btn_direction_right = button_generate(self, (BUTTON_DIRECTION_CENTER_X + 100), BUTTON_DIRECTION_CENTER_Y, "Going Right")
+        btn_direction_right = button_generate(self, 3, 2, 2, 2, 20, 20, "Going Right")
         btn_direction_right.configure(fg_color = '#3D59AB', state = "disabled")
 
         # List with all buttons for manual control to change their colors
@@ -375,12 +416,12 @@ class HomePageFrame(customtkinter.CTkFrame):
             list_buttons_manual_control.append(btn_direction_left)
             list_buttons_manual_control.append(btn_direction_right)
 
-        ## Generate sliders
-        label_visualize_vertical_speed      = label_generate(self, SLIDER_VERTICAL_SPEED_X + 200, SLIDER_VERTICAL_SPEED_Y - 5, (str(self.list_slider_vertical_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " mm/s"))
-        label_visualize_horizontal_speed    = label_generate(self, SLIDER_HORIZONTAL_SPEED_X + 200, SLIDER_HORIZONTAL_SPEED_Y - 5, (str(self.list_slider_horizontal_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " mm/s"))
-        label_visualize_rotation_speed      = label_generate(self, SLIDER_HORIZONTAL_SPEED_X + 200, SLIDER_HORIZONTAL_SPEED_Y + 95, (str(self.list_slider_adaptor_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " turn/s"))
+        # Generate sliders
+        label_visualize_vertical_speed      = label_generate(self, 2, 7, 1, 1, (5, 20), 20, (str(self.list_slider_vertical_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " mm/s"))
+        label_visualize_horizontal_speed    = label_generate(self, 4, 7, 1, 1, (0, 20), 20, (str(self.list_slider_horizontal_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " mm/s"))
+        label_visualize_rotation_speed      = label_generate(self, 6, 7, 1, 1, (0, 20), 20, (str(self.list_slider_adaptor_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " turn/s"))
 
-        slider_vertical_speed = slider_generate(self, SLIDER_VERTICAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y - 50, SLIDER_VERTICAL_SPEED_RANGE_MAX)
+        slider_vertical_speed = slider_generate(self, 2, 4, 1, 3, 5, 5, SLIDER_VERTICAL_SPEED_RANGE_MAX)
         slider_vertical_speed.set(self.list_slider_vertical_info[SLIDER_PREV_VALUE_INDEX])
         slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
@@ -389,7 +430,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_vertical_speed,
                                                                                                                                 g_list_connected_device_info))
 
-        slider_horizontal_speed = slider_generate(self, SLIDER_HORIZONTAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y + 50, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
+        slider_horizontal_speed = slider_generate(self, 4, 4, 1, 3, 5, 5, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
         slider_horizontal_speed.set(self.list_slider_horizontal_info[SLIDER_PREV_VALUE_INDEX])
         slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
@@ -398,7 +439,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_horizontal_speed,
                                                                                                                                 g_list_connected_device_info))
 
-        slider_adaptor_speed = slider_generate(self, SLIDER_HORIZONTAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y + 150, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
+        slider_adaptor_speed = slider_generate(self, 6, 4, 1, 3, 5, 5, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
         slider_adaptor_speed.set(self.list_slider_adaptor_info[SLIDER_PREV_VALUE_INDEX])
         slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
@@ -407,9 +448,9 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_rotation_speed,
                                                                                                                                 g_list_connected_device_info))
 
-        label_vertical_speed_slider     = label_generate(self, SLIDER_VERTICAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y - 80, "Vertical Speed")
-        label_horizontal_speed_slider   = label_generate(self, SLIDER_HORIZONTAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y + 20, "Horizontal speed")
-        label_adaptor_speed_slider      = label_generate(self, SLIDER_HORIZONTAL_SPEED_X, BUTTON_DIRECTION_CENTER_Y + 120, "Adaptor speed")
+        label_vertical_speed_slider     = label_generate(self, 1, 4, 1, 1, (20, 5), 20, "Vertical Speed")
+        label_horizontal_speed_slider   = label_generate(self, 3, 4, 1, 1, (20, 5), 20, "Horizontal speed")
+        label_adaptor_speed_slider      = label_generate(self, 5, 4, 1, 1, (20, 5), 20, "Adaptor speed")
 
         # Generate return button and items to delete when pressed
         list_items_to_delete = [
@@ -428,17 +469,20 @@ class HomePageFrame(customtkinter.CTkFrame):
                                 label_visualize_horizontal_speed,
                                 label_visualize_rotation_speed]
 
-        btn_back = button_generate(self, BUTTON_BACK_VALUE_X, BUTTON_BACK_VALUE_Y, "Back")
+        btn_back = button_generate(self, 0, 8, 1, 1, 20, 20, "Back")
         btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
 
     def __init__(self, master, **kwargs):
         """! Initialisation of a Home Page Frame
         """
         super().__init__(master, **kwargs)
-    
-        btn_manual_mode = button_generate(self, BUTTON_MANUAL_MODE_X, BUTTON_MANUAL_MODE_Y, "Manual Mode")
-        btn_auto_mode   = button_generate(self, BUTTON_AUTO_MODE_X, BUTTON_AUTO_MODE_Y, "Automatic mode")
 
+        # Configure the grid system with specific weights for the main window
+        self.grid_rowconfigure((0, 1), weight = 0)
+        self.grid_columnconfigure(0, weight = 0)
+    
+        btn_manual_mode = button_generate(self, 0, 0, 1, 1, 20, 20, "Manual Mode")
+        btn_auto_mode   = button_generate(self, 1, 0, 1, 1, 20, 20, "Automatic mode")
 
         btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
         btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
