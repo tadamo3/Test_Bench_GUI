@@ -7,6 +7,7 @@
 
 # Imports
 import serial
+import time
 
 path_logs = 'logs/encoder_logs.txt'
 
@@ -90,6 +91,18 @@ g_list_connected_device_info = [0]
 g_list_message_info = [0, 0, 0, 0]
 
 # Functions
+def read_rx_buffer(self, stop_event):
+    """! Reads serial data in a continuous stream\n
+    Rate of reading must be the same of higher than the rate of sending from the uC
+    @param stop_event      When set (true), stops the data reception
+    """
+    while (stop_event.is_set() != True):
+        receive_serial_data(
+                            g_list_message_info,
+                            g_list_connected_device_info)
+
+        time.sleep(0.05)
+
 def connect_to_port(selected_com_port):
     """! Establishes connection with selected COM port
     @param selected_com_port   Selected COM port

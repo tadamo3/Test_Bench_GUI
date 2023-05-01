@@ -35,8 +35,8 @@ COMBOBOX_MOVEMENT_1_X = 100
 COMBOBOX_MOVEMENT_1_Y = 200
 
 ## Maximal values we can travel to
-MAX_HORIZONTAL  = 30
-MAX_VERTICAL    = 30
+MAX_HORIZONTAL  = 300
+MAX_VERTICAL    = 300
 
 ## Name of file
 ENTRY_POS_X = 300
@@ -53,7 +53,7 @@ BUTTON_DIRECTION_CENTER_X = 200
 BUTTON_DIRECTION_CENTER_Y = 250
 
 SLIDER_PREV_VALUE_INDEX = 0
-SLIDER_SPEED_PREV_VALUE_INDEX = 1
+SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX = 1
 
 INDEX_COMBOBOX_MOVEMENTS        = 0
 INDEX_ENTRY_DESIRED_POSITION    = 1
@@ -149,7 +149,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                     
                     speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
 
-                    list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = speed_value_mm_per_sec
+                    list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = speed_value_mm_per_sec
                     label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
 
                 if (slider_type == "Horizontal"):
@@ -162,7 +162,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                     
                     speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
 
-                    list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = speed_value_mm_per_sec
+                    list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = speed_value_mm_per_sec
                     label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
                 
                 if (slider_type == "Adaptor"):
@@ -176,7 +176,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                     gearbox_speed_turn_per_sec = calculate_speed_turn_per_sec(slider_value)
                     gearbox_speed_string = f"{gearbox_speed_turn_per_sec:.2f}"
 
-                    list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = float(gearbox_speed_string)
+                    list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = float(gearbox_speed_string)
                     label_slider.configure(text = (gearbox_speed_string + " turn/s"))
 
                 list_slider_info[SLIDER_PREV_VALUE_INDEX] = slider_value

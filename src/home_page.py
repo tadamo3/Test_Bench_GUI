@@ -19,72 +19,6 @@ from automatic_control import AutomaticMode
 from common import *
 import app
 
-## Global constants
-## The width and height of the home page
-HOME_PAGE_WIDTH     = 1450
-HOME_PAGE_HEIGHT    = 1500
-
-## Info about the encoders values placeholders
-LABEL_ENCODER_VERTICAL_LEFT_VALUE_X = 215
-LABEL_ENCODER_VERTICAL_LEFT_VALUE_Y = 700
-
-INDEX_LABEL_ENCODER_VERTICAL_LEFT   = 0
-INDEX_LABEL_ENCODER_VERTICAL_RIGHT  = 1
-INDEX_LABEL_ENCODER_HORIZONTAL      = 2
-
-BUTTON_DIRECTION_CENTER_X   = 400
-BUTTON_DIRECTION_CENTER_Y   = 350
-
-## Info about the vertical speed slider
-SLIDER_VERTICAL_SPEED_X                 = BUTTON_DIRECTION_CENTER_X + 350
-SLIDER_VERTICAL_SPEED_Y                 = BUTTON_DIRECTION_CENTER_Y - 50
-SLIDER_VERTICAL_SPEED_RANGE_MAX         = 100
-
-## Info about the horizontal speed slider
-SLIDER_HORIZONTAL_SPEED_X                   = BUTTON_DIRECTION_CENTER_X + 350
-SLIDER_HORIZONTAL_SPEED_Y                   = BUTTON_DIRECTION_CENTER_Y + 50
-SLIDER_HORIZONTAL_SPEED_RANGE_MAX           = 100
-
-SLIDER_ADAPTOR_SPEED_RANGE_MAX         = 100
-
-SLIDER_PREV_VALUE_INDEX = 0
-SLIDER_SPEED_PREV_VALUE_INDEX = 1
-
-BUTTON_MANUAL_MODE_X        = 20
-BUTTON_MANUAL_MODE_Y        = 100
-BUTTON_AUTO_MODE_X          = 20 
-BUTTON_AUTO_MODE_Y          = BUTTON_MANUAL_MODE_Y + 100
-
-## Info about the Return button
-BUTTON_BACK_VALUE_X = 1000
-BUTTON_BACK_VALUE_Y = 60
-
-## Info about the entry textbox for position control
-ASK_ENTRY_VALUE_X = 200
-ASK_ENTRY_VALUE_Y = 400
-
-COMBOBOX_MOVEMENT_1_X = 100
-COMBOBOX_MOVEMENT_1_Y = 300
-
-LABEL_NUMBER_REPS_X = COMBOBOX_MOVEMENT_1_X + 500
-LABEL_NUMBER_REPS_Y = COMBOBOX_MOVEMENT_1_Y + 350
-
-LABEL_MODE_X = 400
-LABEL_MODE_Y = 150
-
-## Maximal values we can travel to
-MAX_HORIZONTAL  = 400
-MAX_VERTICAL    = 400
-MAX_SCREW       = 50
-
-CLOCK_FREQUENCY         = 72000000
-PULSE_PER_MM            = 80
-ARR_MINIMUM             = 6500
-SPEED_INCREMENT         = 45
-PULSE_PER_TURN_ADAPTOR  = 400
-RATIO_GEARBOX_ADAPTOR   = 10
-PRESCALOR               = 10
-
 ## Global variables
 list_buttons_manual_control = []
 
@@ -93,29 +27,23 @@ class HomePageFrame(customtkinter.CTkFrame):
     """! Home page class for the Zimmer Test Bench\n
     Defines the components and callback functions of the home page
     """
+    ## List to contain the previous slider value and the previous speed value of the vertical slider
     list_slider_vertical_info   = [0, 0]
+
+    ## List to contain the previous slider value and the previous speed value of the horizontal slider
     list_slider_horizontal_info = [0, 0]
+
+    ## List to contain the previous slider value and the previous speed value of the adaptor slider
     list_slider_adaptor_info    = [0, 0]
 
-    flag_is_auto_thread_stopped = False
+    ## Flag to indicate to class functions the state of the thread
+    flag_is_auto_test_thread_stopped = False
+
+    ## Flag to indicate to class functions if the thread needs to be initialized
     flag_auto_thread_created_once = False
 
-    counter_repetitions = 0
-
-    def read_rx_buffer(self, stop_event):
-        """! Threaded function to receive data in a continuous stream\n
-        Sleeps for 10ms to match the send rate of the uC
-        @param list_labels      List of labels that are meant to be updated periodically
-        """
-        while (stop_event.is_set() != True):
-            receive_serial_data(
-                                                g_list_message_info,
-                                                g_list_connected_device_info)
-
-            time.sleep(0.05)
-
     def slider_speed_callback(self, slider_value, list_slider_info, slider_type, label_slider, list_com_device_info):
-        """! Every time a new value is set, sends the updated speed value to the device
+        """! Every time a new value is set, sends the updated desired speed value to the device
         @param slider_value         The selected speed value for the vertical motor speed
         @param list_slider_info     Notable information for a specific slider
         @param list_com_device_info Notable information for all connected devices
@@ -127,42 +55,42 @@ class HomePageFrame(customtkinter.CTkFrame):
             if (slider_value != previous_slider_value):
                 if (slider_type == "Vertical"):
                     transmit_serial_data(
-                                                        ID_MOTOR_VERTICAL_LEFT,
-                                                        COMMAND_MOTOR_CHANGE_SPEED,
-                                                        MODE_CHANGE_PARAMS,
-                                                        slider_value,
-                                                        list_com_device_info)
+                                            ID_MOTOR_VERTICAL_LEFT,
+                                            COMMAND_MOTOR_CHANGE_SPEED,
+                                            MODE_CHANGE_PARAMS,
+                                            slider_value,
+                                            list_com_device_info)
                     
                     speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
 
-                    list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = speed_value_mm_per_sec
+                    list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = speed_value_mm_per_sec
                     label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
 
                 if (slider_type == "Horizontal"):
                     transmit_serial_data(
-                                                        ID_MOTOR_HORIZONTAL,
-                                                        COMMAND_MOTOR_CHANGE_SPEED,
-                                                        MODE_CHANGE_PARAMS,
-                                                        slider_value,
-                                                        list_com_device_info)
+                                            ID_MOTOR_HORIZONTAL,
+                                            COMMAND_MOTOR_CHANGE_SPEED,
+                                            MODE_CHANGE_PARAMS,
+                                            slider_value,
+                                            list_com_device_info)
                     
                     speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
 
-                    list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = speed_value_mm_per_sec
+                    list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = speed_value_mm_per_sec
                     label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
                 
                 if (slider_type == "Adaptor"):
                     transmit_serial_data(
-                                                        ID_MOTOR_ADAPT,
-                                                        COMMAND_MOTOR_CHANGE_SPEED,
-                                                        MODE_CHANGE_PARAMS,
-                                                        slider_value,
-                                                        list_com_device_info)
+                                            ID_MOTOR_ADAPT,
+                                            COMMAND_MOTOR_CHANGE_SPEED,
+                                            MODE_CHANGE_PARAMS,
+                                            slider_value,
+                                            list_com_device_info)
                     
                     gearbox_speed_turn_per_sec = calculate_speed_turn_per_sec(slider_value)
                     gearbox_speed_string = f"{gearbox_speed_turn_per_sec:.2f}"
 
-                    list_slider_info[SLIDER_SPEED_PREV_VALUE_INDEX] = float(gearbox_speed_string)
+                    list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = float(gearbox_speed_string)
                     label_slider.configure(text = (gearbox_speed_string + " turn/s"))
 
                 list_slider_info[SLIDER_PREV_VALUE_INDEX] = slider_value
@@ -230,18 +158,18 @@ class HomePageFrame(customtkinter.CTkFrame):
 
                 self.flag_auto_thread_created_once = True
             else:
-                if (self.flag_is_auto_thread_stopped == True):
+                if (self.flag_is_auto_test_thread_stopped == True):
                     app.home_page_stop_threads_event.clear()
 
                     thread_auto_mode = None
                     thread_auto_mode = Thread(target = AutomaticMode.auto_mode_test, args = (desired_position, desired_direction, desired_turns, app.home_page_stop_threads_event, ))
                     thread_auto_mode.start()
 
-                    self.flag_is_auto_thread_stopped = False
+                    self.flag_is_auto_test_thread_stopped = False
                 else:
                     app.home_page_stop_threads_event.set()
 
-                    self.flag_is_auto_thread_stopped = True
+                    self.flag_is_auto_test_thread_stopped = True
 
 
     def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode):
@@ -290,9 +218,9 @@ class HomePageFrame(customtkinter.CTkFrame):
         label_desired_turns = label_generate(self, 3, 2, 1, 1, 20, (20, 5), "Number of turns")
         entry_desired_turns = entry_generate(self, 4, 2, 1, 1, 20, (0, 20), "Enter here")
 
-        label_visualize_vertical_speed      = label_generate(self, 2, 7, 1, 1, (5, 20), 20, (str(self.list_slider_vertical_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + "   mm/s"))
-        label_visualize_horizontal_speed    = label_generate(self, 4, 7, 1, 1, (5, 20), 20, (str(self.list_slider_horizontal_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + "   mm/s"))
-        label_visualize_rotation_speed      = label_generate(self, 6, 7, 1, 1, (5, 20), 20, (str(self.list_slider_adaptor_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + "   turn/s"))
+        label_visualize_vertical_speed      = label_generate(self, 2, 7, 1, 1, (5, 20), 20, (str(self.list_slider_vertical_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + "   mm/s"))
+        label_visualize_horizontal_speed    = label_generate(self, 4, 7, 1, 1, (5, 20), 20, (str(self.list_slider_horizontal_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + "   mm/s"))
+        label_visualize_rotation_speed      = label_generate(self, 6, 7, 1, 1, (5, 20), 20, (str(self.list_slider_adaptor_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + "   turn/s"))
 
         slider_vertical_speed = slider_generate(self, 2, 4, 1, 3, 5, 5, SLIDER_VERTICAL_SPEED_RANGE_MAX)
         slider_vertical_speed.set(self.list_slider_vertical_info[SLIDER_PREV_VALUE_INDEX])
@@ -417,9 +345,9 @@ class HomePageFrame(customtkinter.CTkFrame):
             list_buttons_manual_control.append(btn_direction_right)
 
         # Generate sliders
-        label_visualize_vertical_speed      = label_generate(self, 2, 7, 1, 1, (5, 20), 20, (str(self.list_slider_vertical_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " mm/s"))
-        label_visualize_horizontal_speed    = label_generate(self, 4, 7, 1, 1, (0, 20), 20, (str(self.list_slider_horizontal_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " mm/s"))
-        label_visualize_rotation_speed      = label_generate(self, 6, 7, 1, 1, (0, 20), 20, (str(self.list_slider_adaptor_info[SLIDER_SPEED_PREV_VALUE_INDEX]) + " turn/s"))
+        label_visualize_vertical_speed      = label_generate(self, 2, 7, 1, 1, (5, 20), 20, (str(self.list_slider_vertical_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + " mm/s"))
+        label_visualize_horizontal_speed    = label_generate(self, 4, 7, 1, 1, (0, 20), 20, (str(self.list_slider_horizontal_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + " mm/s"))
+        label_visualize_rotation_speed      = label_generate(self, 6, 7, 1, 1, (0, 20), 20, (str(self.list_slider_adaptor_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + " turn/s"))
 
         slider_vertical_speed = slider_generate(self, 2, 4, 1, 3, 5, 5, SLIDER_VERTICAL_SPEED_RANGE_MAX)
         slider_vertical_speed.set(self.list_slider_vertical_info[SLIDER_PREV_VALUE_INDEX])
@@ -439,7 +367,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                                                                                                                 label_visualize_horizontal_speed,
                                                                                                                                 g_list_connected_device_info))
 
-        slider_adaptor_speed = slider_generate(self, 6, 4, 1, 3, 5, 5, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
+        slider_adaptor_speed = slider_generate(self, 6, 4, 1, 3, 5, 5, SLIDER_ADAPTOR_SPEED_RANGE_MAX)
         slider_adaptor_speed.set(self.list_slider_adaptor_info[SLIDER_PREV_VALUE_INDEX])
         slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : self.slider_speed_callback(
                                                                                                                                 slider_value,
@@ -472,7 +400,7 @@ class HomePageFrame(customtkinter.CTkFrame):
         btn_back = button_generate(self, 0, 8, 1, 1, 20, 20, "Back")
         btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
 
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, thread_services, **kwargs):
         """! Initialisation of a Home Page Frame
         """
         super().__init__(master, **kwargs)
@@ -489,5 +417,5 @@ class HomePageFrame(customtkinter.CTkFrame):
 
         ## Start thread to read data rx buffer
         # Continous read of the serial communication RX data
-        thread_rx_data = Thread(target = self.read_rx_buffer, args = (app.home_page_stop_threads_event, ))
+        thread_rx_data = Thread(target = read_rx_buffer, args = (thread_services.home_page_stop_threads_event, ))
         thread_rx_data.start()

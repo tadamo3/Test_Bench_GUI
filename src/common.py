@@ -10,13 +10,101 @@ import tkinter
 import customtkinter
 
 # Global constants
-CLOCK_FREQUENCY         = 72000000
-PULSE_PER_MM            = 80
-ARR_MINIMUM             = 6500
-SPEED_INCREMENT         = 45
-PULSE_PER_TURN_ADAPTOR  = 400
-RATIO_GEARBOX_ADAPTOR   = 10
-PRESCALOR               = 10
+## Clock frequency used by the STM32
+CLOCK_FREQUENCY = 72000000
+
+# Prescalor value for stepper motor timers
+PRESCALOR = 10
+
+## Number of pulses necessary to travel one millimeter with vertical and horizontal rails
+PULSE_PER_MM = 80
+
+## ARR controlled speed value
+ARR_MINIMUM = 6500
+
+## Speed increment factor 
+SPEED_INCREMENT = 45
+
+## Number of pulses to execute one full rotation of the adaptor motor (without gearbox ratio)
+PULSE_PER_TURN_ADAPTOR = 400
+
+## Current gearbox ratio (10 turns of stepper motor for 1 turn of gearbox)
+RATIO_GEARBOX_ADAPTOR = 10
+
+## Maximal range of factor for vertical speed slider
+SLIDER_VERTICAL_SPEED_RANGE_MAX = 100
+
+## Maximal range of factor for horizontal speed slider
+SLIDER_HORIZONTAL_SPEED_RANGE_MAX = 100
+
+## Maximal range of factor for adaptor speed slider
+SLIDER_ADAPTOR_SPEED_RANGE_MAX = 50
+
+## Shared index for the previous  value of the slider
+SLIDER_PREV_VALUE_INDEX = 0
+
+## Shared index for the previous speed value of the slider
+SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX = 1
+
+## Maximal horizontal distance possible without any tools attached
+MAX_HORIZONTAL  = 400
+
+## Maximal vertical distance possible without any tools attached
+MAX_VERTICAL    = 400
+
+## First row index
+ROW_ZERO = 0
+
+## Second row index
+ROW_ONE = 1
+
+## Third row index
+ROW_TWO = 2
+
+## Fourth row index
+ROW_THREE = 3
+
+## Fifth row index
+ROW_FOUR = 4
+
+## Sixth row index
+ROW_FIVE = 5
+
+## Seventh row index
+ROW_SIX = 6
+
+## Eigth row index
+ROW_SEVEN = 7
+
+## Zero column index
+COLUMN_ZERO = 0
+
+## Second column index
+COLUMN_ONE = 1
+
+## Third column index
+COLUMN_TWO = 2
+
+## Fourth column index
+COLUMN_THREE = 3
+
+## Fifth column index
+COLUMN_FOUR = 4
+
+## Sixth column index
+COLUMN_FIVE = 5
+
+## Seventh column index
+COLUMN_SIX = 6
+
+## Eigth column index
+COLUMN_SEVEN = 7
+
+## Usual value for the padx argument in the grid positioning
+PAD_X_USUAL = 20
+
+## Usual value for the pady argument in the grid positioning
+PAD_Y_USUAL = 20
 
 # Functions
 def set_appearance(appearance_mode, default_color_theme):
