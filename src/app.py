@@ -36,16 +36,18 @@ CBBOX_WIDTH = 175
 connected_device = None
 
 # Functions
-def bind_unbind_keys_manual_control(frame_to_init, current_func_id):
+def bind_unbind_keys_manual_control(frame_to_init, frame_object, current_func_id):
     """! Binds keyboard events to specific actions for manual control of the tool
     @param frame_to_init    Name of the frame that is currently being initialized
+    @param frame_object     Object of the frame that is currently being initialized
+    @param current_func_id  ID of a successful binding function (must be passed in order to unbind correct events)
     @return Current function ID corresponding to the binding or unbinding of the keyboard events
     """
     func_id = current_func_id
 
     if (frame_to_init == 'Home'):
-        func_id = app_window.bind('<KeyPress>', lambda event, previous_motor =  manual_control.previous_motor_controlled: manual_control.key_pressed(event, previous_motor, home_page.list_buttons_manual_control))
-        app_window.bind('<KeyRelease>', lambda event, previous_motor = manual_control.previous_motor_controlled: manual_control.key_released(event, previous_motor, home_page.list_buttons_manual_control))
+        func_id = app_window.bind('<KeyPress>', lambda event, previous_motor =  manual_control.previous_motor_controlled: manual_control.key_pressed(event, previous_motor, frame_object.list_directions_buttons))
+        app_window.bind('<KeyRelease>', lambda event, previous_motor = manual_control.previous_motor_controlled: manual_control.key_released(event, previous_motor, frame_object.list_directions_buttons))
     else:
         app_window.unbind('<KeyPress>', func_id)
 
@@ -62,8 +64,6 @@ def frame_selector(frame_to_init, current_keyboard_binding_id):
         if (App.list_frames[i] != frame_to_init):
                 App.dict_frames[App.list_frames[i]].grid_forget()
 
-    current_keyboard_binding_id = bind_unbind_keys_manual_control(frame_to_init, current_keyboard_binding_id)
-
     # Initialize the correct frame
     App.dict_frames[frame_to_init].grid(
                                         row     = ROW_ONE,
@@ -71,6 +71,8 @@ def frame_selector(frame_to_init, current_keyboard_binding_id):
                                         padx    = PAD_X_USUAL,
                                         pady    = PAD_Y_USUAL,
                                         sticky  = 'nsew')
+    
+    current_keyboard_binding_id = bind_unbind_keys_manual_control(frame_to_init, App.dict_frames[frame_to_init], current_keyboard_binding_id)
 
 def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
         """! Creates a combobox to list out all COM ports currently used by computer
@@ -132,7 +134,7 @@ class App(customtkinter.CTk):
     ## ID of the keyboard events
     keyboard_binding_event_id = None
 
-    def instanciate_central_frames(self, frame_button_select_frames, thread_services):
+    def instanciate_central_frames(self, frame_button_select_frames, thread_services, connected_device_object):
         """! Instanciates all of the main user frames (HomePage, ProgramsPage, etc.)
         @param frame_master     Master frame to contain the frame selection buttons
         @param thread_services  All thread related services to be dispatched throughout the different GUI frames
@@ -140,6 +142,7 @@ class App(customtkinter.CTk):
         self.dict_frames[self.list_frames[INDEX_HOME]]      = home_page.HomePageFrame(
                                                                                         master = self,
                                                                                         thread_services = thread_services,
+                                                                                        connected_device = connected_device_object,
                                                                                         fg_color="#1a1822")
         self.dict_frames[self.list_frames[INDEX_PROGRAMS]]  = programs_page.ProgramsPageFrame(master = self, fg_color="#1a1822")
 
@@ -215,7 +218,7 @@ class App(customtkinter.CTk):
                                                                             cbbox_com_ports.get(),
                                                                             connected_device))
 
-        self.instanciate_central_frames(frame_left_side, thread_services)
+        self.instanciate_central_frames(frame_left_side, thread_services, connected_device)
 
     def on_closing(self):
         """! Procedure to execute on window closing event

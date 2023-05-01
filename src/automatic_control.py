@@ -137,7 +137,7 @@ class AutomaticMode():
             AutomaticMode.current_checkpoint_to_reach    = CHECKPOINT_A
             AutomaticMode.previous_checkpoint_to_reach   = CHECKPOINT_B
 
-    def auto_mode_test(self, position_to_reach, directions, number_of_turns, stop_event):
+    def auto_mode_test(position_to_reach, directions, number_of_turns, stop_event):
         id, command_a, command_b = determine_trajectory_parameters(directions, AutomaticMode.list_movement_entries)
 
         if (id == ID_MOTOR_ADAPT):

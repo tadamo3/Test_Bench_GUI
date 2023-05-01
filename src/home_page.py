@@ -19,28 +19,99 @@ from automatic_control import AutomaticMode
 from common import *
 import app
 
-## Global variables
-list_buttons_manual_control = []
-
 ## Classes
 class HomePageFrame(customtkinter.CTkFrame):
     """! Home page class for the Zimmer Test Bench\n
     Defines the components and callback functions of the home page
     """
+    ## List to contain the direction buttons
+    # It is kept accessible to the main app class to bind and unbind the keys when not in the home page frame
+    list_directions_buttons = []
+
     ## List to contain the previous slider value and the previous speed value of the vertical slider
-    list_slider_vertical_info   = [0, 0]
+    list_slider_vertical_info = [0, 0]
 
     ## List to contain the previous slider value and the previous speed value of the horizontal slider
     list_slider_horizontal_info = [0, 0]
 
     ## List to contain the previous slider value and the previous speed value of the adaptor slider
-    list_slider_adaptor_info    = [0, 0]
+    list_slider_adaptor_info = [0, 0]
 
     ## Flag to indicate to class functions the state of the thread
     flag_is_auto_test_thread_stopped = False
 
-    ## Flag to indicate to class functions if the thread needs to be initialized
-    flag_auto_thread_created_once = False
+    def generate_title_frame(self, title):
+        """! Generates and places the title of the frame
+        @param title    The title to be given to the frame
+        @return    The label object created
+        """
+        # Generate auto label 
+        label = customtkinter.CTkLabel(master    = self, 
+                                            text_color  = "dodger blue", 
+                                            font        = ("Arial", 40),
+                                            text        = title) 
+        label.grid(
+                            row         = ROW_ZERO,
+                            column      = COLUMN_ZERO,
+                            rowspan     = 1,
+                            columnspan  = 4,
+                            padx        = PAD_X_USUAL,
+                            pady        = PAD_Y_USUAL,
+                            sticky      = 'nsew')
+        
+        return label
+
+    def generate_directions_buttons(self):
+        """! Generates and places the direction buttons on the home page frame
+        @return     A list containing all of the buttons objects
+        """
+        btn_direction_up = button_generate(
+                                            self,
+                                            ROW_ONE,
+                                            COLUMN_ONE,
+                                            2,
+                                            2,
+                                            PAD_X_USUAL,
+                                            PAD_Y_USUAL,
+                                            "Going Up")
+        btn_direction_up.configure(fg_color = '#3D59AB', state = "disabled")
+            
+        btn_direction_down = button_generate(
+                                                self,
+                                                ROW_FIVE,
+                                                COLUMN_ONE,
+                                                2,
+                                                2,
+                                                PAD_X_USUAL,
+                                                PAD_Y_USUAL,
+                                                "Going Down")
+        btn_direction_down.configure(fg_color = '#3D59AB', state = "disabled")
+
+        btn_direction_left = button_generate(
+                                                self,
+                                                ROW_THREE,
+                                                COLUMN_ZERO,
+                                                2,
+                                                2,
+                                                PAD_X_USUAL,
+                                                PAD_Y_USUAL,
+                                                "Going Left")
+        btn_direction_left.configure(fg_color = '#3D59AB', state = "disabled")
+
+        btn_direction_right = button_generate(
+                                                self,
+                                                ROW_THREE,
+                                                COLUMN_TWO,
+                                                2,
+                                                2,
+                                                PAD_X_USUAL,
+                                                PAD_Y_USUAL,
+                                                "Going Right")
+        btn_direction_right.configure(fg_color = '#3D59AB', state = "disabled")
+
+        list_buttons_manual_control = [btn_direction_up, btn_direction_down, btn_direction_left, btn_direction_right]
+        
+        return list_buttons_manual_control
 
     def slider_speed_callback(self, slider_value, list_slider_info, slider_type, label_slider, list_com_device_info):
         """! Every time a new value is set, sends the updated desired speed value to the device
@@ -95,327 +166,259 @@ class HomePageFrame(customtkinter.CTkFrame):
 
                 list_slider_info[SLIDER_PREV_VALUE_INDEX] = slider_value
     
-    def button_back_click(self, btn_back, list):
-        # This function is utilized when the back button is clicked 
-        # Destroy all previous components generated beforehand
-        btn_back.grid_forget() 
+    def button_back_click(self, btn_back, list_items_to_delete):
+        """! Clears all items that were placed on the frame and replaces the control buttons
+        @param btn_back                 The back button object
+        @param list_items_to_delete     The list of items to clear off the grid of the frame
+        """
+        btn_back.grid_forget()
 
-        for i in range(len(list)):
-            list[i].grid_forget()
+        for i in range(len(list_items_to_delete)):
+            # Need to check if item is a list passed in the list of items to delete
+            if (isinstance(list_items_to_delete[i], type([])) == True):
+                for j in range(len(list_items_to_delete[i])):
+                    list_items_to_delete[i][j].grid_forget()
+            else:
+                list_items_to_delete[i].grid_forget()
 
-        self.grid_rowconfigure((0, 1), weight = 0)
+        self.grid_rowconfigure((ROW_ZERO, ROW_ONE), weight = 0)
         self.grid_columnconfigure(0, weight = 0)
     
-        btn_manual_mode = button_generate(self, 0, 0, 1, 1, 20, 20, "Manual Mode")
-        btn_auto_mode   = button_generate(self, 1, 0, 1, 1, 20, 20, "Automatic mode")
+        btn_manual_mode = button_generate(self, 0, 0, 1, 1, PAD_X_USUAL, PAD_Y_USUAL, "Manual Mode")
+        btn_auto_mode   = button_generate(self, 1, 0, 1, 1, PAD_X_USUAL, PAD_Y_USUAL, "Automatic mode")
 
         btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
         btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
 
-    def button_submit_test_click(self, button_submit, entry_position, entry_turns, combobox_direction):
-        # This function is utilized when the submit button is clicked 
-        # Desired position
+    def button_submit_test_click(self, button_submit, entry_position, entry_turns, combobox_direction, thread_services):
+        """! Verifies the inputs given in the automatic mode control page and starts the appropriate thread to test the desired movement
+        @param button_submit        The submit button object
+        @param entry_position       Contains the number of mm of movement to be done
+        @param entry_turns          Contains the number of turns to be done
+        @param combobox_direction   Contains the combination of directions of the movement
+        @param thread_services      All thread related services to be dispatched throughout the different GUI frames 
+        """
         desired_position = int(entry_position.get())
         desired_direction = combobox_direction.get()
-        
-        # Desired turns 
         desired_turns = float(entry_turns.get())
 
-        # Generate message errors 
         error_msg = None
 
-        # Cannot exceed max value
-        # For any vertical movement 
-        if desired_direction == AutomaticMode.list_movement_entries[0] or desired_direction == AutomaticMode.list_movement_entries[1]:
-            if desired_position > MAX_VERTICAL: 
-                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
-            
-        # For any horizontal movement
-        if desired_direction == AutomaticMode.list_movement_entries[2] or desired_direction == AutomaticMode.list_movement_entries[3]:
-            if desired_position > MAX_HORIZONTAL: 
-                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
-
-        # For any screwing movement
-        if desired_direction == AutomaticMode.list_movement_entries[4] or desired_direction == AutomaticMode.list_movement_entries[5]:
-            if desired_position > MAX_SCREW: 
-                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
-        
-        # Combobox cannot be empty
-        if desired_direction == "Choose movement":
-            error_msg = CTkMessagebox(title="Error", message="Missing desired direction", icon="cancel")
+        #error_msg = verify_test_inputs()
         
         if (error_msg == None):
             if (button_submit.cget("text") == "Test One Repetition"):
                 button_submit.configure(text = "Stop test", fg_color = '#EE3B3B')
+
+                if (self.flag_is_auto_test_thread_stopped == True):
+                    thread_services.start_test_repetition_thread(desired_position, desired_direction, desired_turns)
+                    self.flag_is_auto_test_thread_stopped = False
             else:
                 button_submit.configure(text = "Test One Repetition", fg_color = '#66CD00', text_color = '#000000')
-
-            # Default thread
-            thread_auto_mode = Thread(target = AutomaticMode.auto_mode_test, args = (desired_position, desired_direction, desired_turns, app.home_page_stop_threads_event, ))
-
-            if (self.flag_auto_thread_created_once == False):
-                thread_auto_mode.start()
-
-                self.flag_auto_thread_created_once = True
-            else:
-                if (self.flag_is_auto_test_thread_stopped == True):
-                    app.home_page_stop_threads_event.clear()
-
-                    thread_auto_mode = None
-                    thread_auto_mode = Thread(target = AutomaticMode.auto_mode_test, args = (desired_position, desired_direction, desired_turns, app.home_page_stop_threads_event, ))
-                    thread_auto_mode.start()
-
-                    self.flag_is_auto_test_thread_stopped = False
-                else:
-                    app.home_page_stop_threads_event.set()
-
+                
+                if (self.flag_is_auto_test_thread_stopped == False):
+                    thread_services.stop_test_repetition_thread()
                     self.flag_is_auto_test_thread_stopped = True
 
 
-    def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode):
+    def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode, thread_services):
+        """! Generates and places all items related to the automatic mode
+        @param button_manual_mode   Button object for the manual mode option
+        @param button_auto_mode     Button object for the automatic mode option
+        @param thread_services      All thread related services to be dispatched throughout the different GUI frames
+        """
         button_manual_mode.grid_forget()
         button_auto_mode.grid_forget()
 
-        self.rowconfigure((0, 6), weight = 0)
-        self.rowconfigure(7, weight = 1)
-        self.columnconfigure((0, 3), weight = 0)
-        self.columnconfigure((4, 6), weight = 2)
-        self.columnconfigure((7, 8), weight = 0)
+        self.rowconfigure((ROW_ZERO, ROW_SIX), weight = 0)
+        self.rowconfigure(ROW_SEVEN, weight = 1)
+        self.columnconfigure((COLUMN_ZERO, COLUMN_THREE), weight = 0)
+        self.columnconfigure((COLUMN_FOUR, COLUMN_SIX), weight = 2)
+        self.columnconfigure((COLUMN_SEVEN, COLUMN_EIGHT), weight = 0)
 
-        # Generate manual label 
-        label_auto = customtkinter.CTkLabel(master    = self, 
-                                            text_color  = "dodger blue", 
-                                            font        = ("Arial",40),
-                                            text        = "AUTOMATIC MODE") 
-        label_auto.grid(
-                            row         = 0,
-                            column      = 0,
-                            rowspan     = 1,
-                            columnspan  = 4,
-                            padx        = 20,
-                            pady        = 20,
-                            sticky      = 'nsew')
+        label_title_frame = self.generate_title_frame("AUTOMATIC MODE")
 
-        # Position control input values
-        label_movement = label_generate(self, 1, 1, 1, 1, 20, (20, 5), "Movement : ")
+        # Generate position control inputs
+        label_movement = label_generate(
+                                        self,
+                                        ROW_ONE,
+                                        COLUMN_ONE,
+                                        1,
+                                        1,
+                                        PAD_X_USUAL,
+                                        (PAD_Y_USUAL, 5),
+                                        "Movement : ")
         combobox_movement = customtkinter.CTkOptionMenu(
                                                         master = self,
                                                         values = AutomaticMode.list_movement_entries, 
                                                         dynamic_resizing = False)
         combobox_movement.set("Choose movement")
         combobox_movement.grid(
-                                row         = 2,
-                                column      = 1,
+                                row         = ROW_TWO,
+                                column      = COLUMN_ONE,
                                 rowspan     = 1,
                                 columnspan  = 1,
-                                padx        = 20,
-                                pady        = (0, 20),
+                                padx        = PAD_X_USUAL,
+                                pady        = (0, PAD_Y_USUAL),
                                 sticky      = 'nsew')
 
-        label_desired_position = label_generate(self, 1, 2, 1, 1, 20, (20, 5), "Amplitude (mm)")
-        entry_desired_position = entry_generate(self, 2, 2, 1, 1, 20, (0, 20), "Enter here")
+        list_slider_items = generate_sliders(self, MODE_AUTOMATIC)
 
-        label_desired_turns = label_generate(self, 3, 2, 1, 1, 20, (20, 5), "Number of turns")
-        entry_desired_turns = entry_generate(self, 4, 2, 1, 1, 20, (0, 20), "Enter here")
+        label_desired_position = label_generate(
+                                                    self,
+                                                    ROW_ONE,
+                                                    COLUMN_TWO,
+                                                    1,
+                                                    1,
+                                                    PAD_X_USUAL, 
+                                                    (PAD_Y_USUAL, 5), 
+                                                    "Amplitude (mm)")
+        entry_desired_position = entry_generate(
+                                                    self, 
+                                                    ROW_TWO,
+                                                    COLUMN_TWO,
+                                                    1,
+                                                    1,
+                                                    PAD_X_USUAL, 
+                                                    (0, PAD_Y_USUAL), 
+                                                    "Enter here")
 
-        label_visualize_vertical_speed      = label_generate(self, 2, 7, 1, 1, (5, 20), 20, (str(self.list_slider_vertical_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + "   mm/s"))
-        label_visualize_horizontal_speed    = label_generate(self, 4, 7, 1, 1, (5, 20), 20, (str(self.list_slider_horizontal_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + "   mm/s"))
-        label_visualize_rotation_speed      = label_generate(self, 6, 7, 1, 1, (5, 20), 20, (str(self.list_slider_adaptor_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + "   turn/s"))
-
-        slider_vertical_speed = slider_generate(self, 2, 4, 1, 3, 5, 5, SLIDER_VERTICAL_SPEED_RANGE_MAX)
-        slider_vertical_speed.set(self.list_slider_vertical_info[SLIDER_PREV_VALUE_INDEX])
-        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
-                                                                                                                                slider_value,
-                                                                                                                                self.list_slider_vertical_info,
-                                                                                                                                "Vertical",
-                                                                                                                                label_visualize_vertical_speed,
-                                                                                                                                g_list_connected_device_info))
-
-        slider_horizontal_speed = slider_generate(self, 4, 4, 1, 3, 5, 5, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
-        slider_horizontal_speed.set(self.list_slider_horizontal_info[SLIDER_PREV_VALUE_INDEX])
-        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
-                                                                                                                                slider_value,
-                                                                                                                                self.list_slider_horizontal_info,
-                                                                                                                                "Horizontal",
-                                                                                                                                label_visualize_horizontal_speed,
-                                                                                                                                g_list_connected_device_info))
-
-        slider_adaptor_speed = slider_generate(self, 6, 4, 1, 3, 5, 5, SLIDER_ADAPTOR_SPEED_RANGE_MAX)
-        slider_adaptor_speed.set(self.list_slider_adaptor_info[SLIDER_PREV_VALUE_INDEX])
-        slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : self.slider_speed_callback(
-                                                                                                                                slider_value,
-                                                                                                                                self.list_slider_adaptor_info,
-                                                                                                                                "Adaptor",
-                                                                                                                                label_visualize_rotation_speed,
-                                                                                                                                g_list_connected_device_info))
-
-        label_vertical_speed_slider     = label_generate(self, 1, 4, 1, 1, 20, (20, 5), "Vertical Speed")
-        label_horizontal_speed_slider   = label_generate(self, 3, 4, 1, 1, 20, (20, 5), "Horizontal speed")
-        label_adaptor_speed_slider      = label_generate(self, 5, 4, 1, 1, 20, (20, 5), "Adaptor speed")
+        label_desired_turns = label_generate(
+                                                self,
+                                                ROW_THREE,
+                                                COLUMN_TWO,
+                                                1,
+                                                1,
+                                                PAD_X_USUAL, 
+                                                (PAD_Y_USUAL, 5), 
+                                                "Number of turns")
+        entry_desired_turns = entry_generate(
+                                                self,
+                                                ROW_FOUR,
+                                                COLUMN_TWO,
+                                                1,
+                                                1,
+                                                PAD_X_USUAL,
+                                                (0, PAD_Y_USUAL),
+                                                "Enter here")
 
         # Create frame for control buttons
         control_buttons_container = customtkinter.CTkFrame(self)
         control_buttons_container.grid(
-                                        row         = 7,
-                                        column      = 0,
+                                        row         = ROW_SEVEN,
+                                        column      = COLUMN_ZERO,
                                         rowspan     = 1,
                                         columnspan  = 9,
-                                        padx        = 20,
-                                        pady        = 20,
+                                        padx        = PAD_X_USUAL,
+                                        pady        = PAD_Y_USUAL,
                                         sticky      = 'nsew')
         
         # Configure the grid system with specified weights for the control button frame
-        control_buttons_container.grid_rowconfigure(0, weight = 1)
-        control_buttons_container.grid_columnconfigure(0, weight = 1)
+        control_buttons_container.grid_rowconfigure(ROW_ZERO, weight = 1)
+        control_buttons_container.grid_columnconfigure(COLUMN_ZERO, weight = 1)
 
-        btn_submit_test  = button_generate(control_buttons_container, 0, 0, 1, 1, 20, 20, "Test One Repetition")
+        btn_submit_test  = button_generate(control_buttons_container, 0, 0, 1, 1, PAD_X_USUAL, PAD_Y_USUAL, "Test One Repetition")
         btn_submit_test.configure(
-                                    command = lambda : self.button_submit_test_click(btn_submit_test, entry_desired_position, entry_desired_turns, combobox_movement), 
+                                    command = lambda : self.button_submit_test_click(btn_submit_test, entry_desired_position, entry_desired_turns, combobox_movement, thread_services), 
                                     fg_color = '#66CD00', 
                                     text_color = '#000000',
                                     width = 150,
                                     height = 50)
     
-        # Return button configuration
+        # Generate return button and items to delete when pressed
         list_items_to_delete = [
                                 label_desired_position,
                                 entry_desired_position,
-                                slider_horizontal_speed,
-                                slider_vertical_speed,
-                                slider_adaptor_speed,
+                                list_slider_items,
                                 combobox_movement,
                                 btn_submit_test,
                                 label_desired_turns,
                                 entry_desired_turns,
-                                label_auto,
+                                label_title_frame,
                                 label_movement,
-                                label_horizontal_speed_slider,
-                                label_visualize_vertical_speed, 
-                                label_visualize_horizontal_speed,
-                                label_vertical_speed_slider,
-                                label_adaptor_speed_slider,
-                                label_visualize_rotation_speed,
                                 control_buttons_container]
 
-        btn_back = button_generate(self, 0, 8, 1, 1, 20, 20, "Back")
+        btn_back = button_generate(
+                                    self, 
+                                    ROW_ZERO, 
+                                    COLUMN_EIGHT, 
+                                    1, 
+                                    1, 
+                                    PAD_X_USUAL, 
+                                    PAD_Y_USUAL, 
+                                    "Back")
         btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
 
     def button_manual_mode_click(self, button_manual_mode, button_auto_mode):
+        """! Generates and places all items related to the manual mode
+        @param button_manual_mode   Button object for the manual mode option
+        @param button_auto_mode     Button object for the automatic mode option
+        """
+        # Reset the grid positioning
         button_manual_mode.grid_forget()
         button_auto_mode.grid_forget()
 
-        # Configure the grid system with specific weights for the manual mode of the home page
-        self.rowconfigure((0, 6), weight = 0)
-        self.columnconfigure((0, 3), weight = 0)
-        self.columnconfigure((4, 6), weight = 2)
-        self.columnconfigure((7, 8), weight = 0)
+        self.rowconfigure((ROW_ZERO, ROW_SIX), weight = 0)
+        self.columnconfigure((COLUMN_ZERO, COLUMN_THREE), weight = 0)
+        self.columnconfigure((COLUMN_FOUR, COLUMN_SIX), weight = 2)
+        self.columnconfigure((COLUMN_SEVEN, COLUMN_EIGHT), weight = 0)
 
-        # Generate manual label 
-        label_manual = customtkinter.CTkLabel(master    = self, 
-                                            text_color  = "dodger blue", 
-                                            font        = ("Arial",40),
-                                            text        = "MANUAL MODE") 
-        label_manual.grid(
-                            row         = 0,
-                            column      = 0,
-                            rowspan     = 1,
-                            columnspan  = 4,
-                            padx        = 20,
-                            pady        = 20,
-                            sticky      = 'nsew')
+        label_title_frame = self.generate_title_frame("MANUAL_MODE")
 
         # Generate direction buttons
-        btn_direction_up = button_generate(self, 1, 1, 2, 2, 20, 20, "Going Up")
-        btn_direction_up.configure(fg_color = '#3D59AB', state = "disabled")
-            
-        btn_direction_down = button_generate(self, 5, 1, 2, 2, 20, 20, "Going Down")
-        btn_direction_down.configure(fg_color = '#3D59AB', state = "disabled")
-
-        btn_direction_left = button_generate(self, 3, 0, 2, 2, 20, 20, "Going Left")
-        btn_direction_left.configure(fg_color = '#3D59AB', state = "disabled")
-
-        btn_direction_right = button_generate(self, 3, 2, 2, 2, 20, 20, "Going Right")
-        btn_direction_right.configure(fg_color = '#3D59AB', state = "disabled")
-
-        # List with all buttons for manual control to change their colors
-        if (len(list_buttons_manual_control) == 0):
-            list_buttons_manual_control.append(btn_direction_up)
-            list_buttons_manual_control.append(btn_direction_down)
-            list_buttons_manual_control.append(btn_direction_left)
-            list_buttons_manual_control.append(btn_direction_right)
+        self.list_directions_buttons = self.generate_directions_buttons()
 
         # Generate sliders
-        label_visualize_vertical_speed      = label_generate(self, 2, 7, 1, 1, (5, 20), 20, (str(self.list_slider_vertical_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + " mm/s"))
-        label_visualize_horizontal_speed    = label_generate(self, 4, 7, 1, 1, (0, 20), 20, (str(self.list_slider_horizontal_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + " mm/s"))
-        label_visualize_rotation_speed      = label_generate(self, 6, 7, 1, 1, (0, 20), 20, (str(self.list_slider_adaptor_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX]) + " turn/s"))
-
-        slider_vertical_speed = slider_generate(self, 2, 4, 1, 3, 5, 5, SLIDER_VERTICAL_SPEED_RANGE_MAX)
-        slider_vertical_speed.set(self.list_slider_vertical_info[SLIDER_PREV_VALUE_INDEX])
-        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
-                                                                                                                                slider_value,
-                                                                                                                                self.list_slider_vertical_info,
-                                                                                                                                "Vertical",
-                                                                                                                                label_visualize_vertical_speed,
-                                                                                                                                g_list_connected_device_info))
-
-        slider_horizontal_speed = slider_generate(self, 4, 4, 1, 3, 5, 5, SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
-        slider_horizontal_speed.set(self.list_slider_horizontal_info[SLIDER_PREV_VALUE_INDEX])
-        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
-                                                                                                                                slider_value,
-                                                                                                                                self.list_slider_horizontal_info,
-                                                                                                                                "Horizontal",
-                                                                                                                                label_visualize_horizontal_speed,
-                                                                                                                                g_list_connected_device_info))
-
-        slider_adaptor_speed = slider_generate(self, 6, 4, 1, 3, 5, 5, SLIDER_ADAPTOR_SPEED_RANGE_MAX)
-        slider_adaptor_speed.set(self.list_slider_adaptor_info[SLIDER_PREV_VALUE_INDEX])
-        slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : self.slider_speed_callback(
-                                                                                                                                slider_value,
-                                                                                                                                self.list_slider_adaptor_info,
-                                                                                                                                "Adaptor",
-                                                                                                                                label_visualize_rotation_speed,
-                                                                                                                                g_list_connected_device_info))
-
-        label_vertical_speed_slider     = label_generate(self, 1, 4, 1, 1, (20, 5), 20, "Vertical Speed")
-        label_horizontal_speed_slider   = label_generate(self, 3, 4, 1, 1, (20, 5), 20, "Horizontal speed")
-        label_adaptor_speed_slider      = label_generate(self, 5, 4, 1, 1, (20, 5), 20, "Adaptor speed")
-
+        list_slider_items = generate_sliders(self, MODE_MANUAL)
+        
         # Generate return button and items to delete when pressed
         list_items_to_delete = [
-                                btn_direction_up, 
-                                btn_direction_down, 
-                                btn_direction_left,
-                                btn_direction_right,
-                                slider_vertical_speed,
-                                slider_horizontal_speed,
-                                slider_adaptor_speed,
-                                label_manual,
-                                label_horizontal_speed_slider,
-                                label_vertical_speed_slider,
-                                label_adaptor_speed_slider,
-                                label_visualize_vertical_speed,
-                                label_visualize_horizontal_speed,
-                                label_visualize_rotation_speed]
+                                self.list_directions_buttons,
+                                list_slider_items,
+                                label_title_frame]
 
-        btn_back = button_generate(self, 0, 8, 1, 1, 20, 20, "Back")
+        btn_back = button_generate(
+                                    self,
+                                    ROW_ZERO,
+                                    COLUMN_EIGHT,
+                                    1,
+                                    1,
+                                    PAD_X_USUAL, 
+                                    PAD_Y_USUAL, 
+                                    "Back")
         btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
 
-    def __init__(self, master, thread_services, **kwargs):
+    def __init__(self, master, thread_services, connected_device, **kwargs):
         """! Initialisation of a Home Page Frame
         """
         super().__init__(master, **kwargs)
 
-        # Configure the grid system with specific weights for the main window
-        self.grid_rowconfigure((0, 1), weight = 0)
-        self.grid_columnconfigure(0, weight = 0)
+        # Configure the grid system with specific weights
+        self.grid_rowconfigure((ROW_ZERO, ROW_ONE), weight = 0)
+        self.grid_columnconfigure(COLUMN_ZERO, weight = 0)
     
-        btn_manual_mode = button_generate(self, 0, 0, 1, 1, 20, 20, "Manual Mode")
-        btn_auto_mode   = button_generate(self, 1, 0, 1, 1, 20, 20, "Automatic mode")
+        btn_manual_mode = button_generate(
+                                            self, 
+                                            ROW_ZERO,
+                                            COLUMN_ZERO, 
+                                            1, 
+                                            1, 
+                                            PAD_X_USUAL, 
+                                            PAD_Y_USUAL, 
+                                            "Manual Mode")
+        btn_auto_mode   = button_generate(
+                                            self, 
+                                            ROW_ONE, 
+                                            COLUMN_ZERO, 
+                                            1, 
+                                            1, 
+                                            PAD_X_USUAL, 
+                                            PAD_Y_USUAL, 
+                                            "Automatic mode")
 
         btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
-        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
+        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode, thread_services))
 
-        ## Start thread to read data rx buffer
-        # Continous read of the serial communication RX data
+        # Continous read of the serial communication data is started if a device is connected
         thread_rx_data = Thread(target = read_rx_buffer, args = (thread_services.home_page_stop_threads_event, ))
         thread_rx_data.start()
