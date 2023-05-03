@@ -112,61 +112,8 @@ class HomePageFrame(customtkinter.CTkFrame):
         list_buttons_manual_control = [btn_direction_up, btn_direction_down, btn_direction_left, btn_direction_right]
         
         return list_buttons_manual_control
-
-    def slider_speed_callback(self, slider_value, list_slider_info, slider_type, label_slider, list_com_device_info):
-        """! Every time a new value is set, sends the updated desired speed value to the device
-        @param slider_value         The selected speed value for the vertical motor speed
-        @param list_slider_info     Notable information for a specific slider
-        @param list_com_device_info Notable information for all connected devices
-        """
-        if (list_com_device_info[0] != 0):
-            slider_value = round(slider_value)
-            previous_slider_value = round(list_slider_info[SLIDER_PREV_VALUE_INDEX])
-
-            if (slider_value != previous_slider_value):
-                if (slider_type == "Vertical"):
-                    transmit_serial_data(
-                                            ID_MOTOR_VERTICAL_LEFT,
-                                            COMMAND_MOTOR_CHANGE_SPEED,
-                                            MODE_CHANGE_PARAMS,
-                                            slider_value,
-                                            list_com_device_info)
-                    
-                    speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
-
-                    list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = speed_value_mm_per_sec
-                    label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
-
-                if (slider_type == "Horizontal"):
-                    transmit_serial_data(
-                                            ID_MOTOR_HORIZONTAL,
-                                            COMMAND_MOTOR_CHANGE_SPEED,
-                                            MODE_CHANGE_PARAMS,
-                                            slider_value,
-                                            list_com_device_info)
-                    
-                    speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
-
-                    list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = speed_value_mm_per_sec
-                    label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
-                
-                if (slider_type == "Adaptor"):
-                    transmit_serial_data(
-                                            ID_MOTOR_ADAPT,
-                                            COMMAND_MOTOR_CHANGE_SPEED,
-                                            MODE_CHANGE_PARAMS,
-                                            slider_value,
-                                            list_com_device_info)
-                    
-                    gearbox_speed_turn_per_sec = calculate_speed_turn_per_sec(slider_value)
-                    gearbox_speed_string = f"{gearbox_speed_turn_per_sec:.2f}"
-
-                    list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = float(gearbox_speed_string)
-                    label_slider.configure(text = (gearbox_speed_string + " turn/s"))
-
-                list_slider_info[SLIDER_PREV_VALUE_INDEX] = slider_value
     
-    def button_back_click(self, btn_back, list_items_to_delete):
+    def button_back_click(self, btn_back, list_items_to_delete, thread_services, connected_device):
         """! Clears all items that were placed on the frame and replaces the control buttons
         @param btn_back                 The back button object
         @param list_items_to_delete     The list of items to clear off the grid of the frame
@@ -184,19 +131,36 @@ class HomePageFrame(customtkinter.CTkFrame):
         self.grid_rowconfigure((ROW_ZERO, ROW_ONE), weight = 0)
         self.grid_columnconfigure(0, weight = 0)
     
-        btn_manual_mode = button_generate(self, 0, 0, 1, 1, PAD_X_USUAL, PAD_Y_USUAL, "Manual Mode")
-        btn_auto_mode   = button_generate(self, 1, 0, 1, 1, PAD_X_USUAL, PAD_Y_USUAL, "Automatic mode")
+        btn_manual_mode = button_generate(
+                                            self, 
+                                            ROW_ZERO, 
+                                            COLUMN_ONE, 
+                                            1, 
+                                            1, 
+                                            PAD_X_USUAL, 
+                                            PAD_Y_USUAL, 
+                                            "Manual Mode")
+        btn_auto_mode   = button_generate(
+                                            self, 
+                                            ROW_ONE, 
+                                            COLUMN_ZERO, 
+                                            1, 
+                                            1, 
+                                            PAD_X_USUAL, 
+                                            PAD_Y_USUAL, 
+                                            "Automatic mode")
 
-        btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
-        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode))
+        btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))
+        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))
 
-    def button_submit_test_click(self, button_submit, entry_position, entry_turns, combobox_direction, thread_services):
+    def button_submit_test_click(self, button_submit, entry_position, entry_turns, combobox_direction, thread_services, connected_device):
         """! Verifies the inputs given in the automatic mode control page and starts the appropriate thread to test the desired movement
         @param button_submit        The submit button object
         @param entry_position       Contains the number of mm of movement to be done
         @param entry_turns          Contains the number of turns to be done
         @param combobox_direction   Contains the combination of directions of the movement
         @param thread_services      All thread related services to be dispatched throughout the different GUI frames 
+        @param connected_device     The Serial object that is currently connected to the application
         """
         desired_position = int(entry_position.get())
         desired_direction = combobox_direction.get()
@@ -211,7 +175,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                 button_submit.configure(text = "Stop test", fg_color = '#EE3B3B')
 
                 if (self.flag_is_auto_test_thread_stopped == True):
-                    thread_services.start_test_repetition_thread(desired_position, desired_direction, desired_turns)
+                    thread_services.start_test_repetition_thread(desired_position, desired_direction, desired_turns, connected_device)
                     self.flag_is_auto_test_thread_stopped = False
             else:
                 button_submit.configure(text = "Test One Repetition", fg_color = '#66CD00', text_color = '#000000')
@@ -221,11 +185,12 @@ class HomePageFrame(customtkinter.CTkFrame):
                     self.flag_is_auto_test_thread_stopped = True
 
 
-    def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode, thread_services):
+    def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode, thread_services, device):
         """! Generates and places all items related to the automatic mode
         @param button_manual_mode   Button object for the manual mode option
         @param button_auto_mode     Button object for the automatic mode option
         @param thread_services      All thread related services to be dispatched throughout the different GUI frames
+        @param device               The serial object connected to the application
         """
         button_manual_mode.grid_forget()
         button_auto_mode.grid_forget()
@@ -262,7 +227,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                 pady        = (0, PAD_Y_USUAL),
                                 sticky      = 'nsew')
 
-        list_slider_items = generate_sliders(self, MODE_AUTOMATIC)
+        list_slider_items = generate_sliders(self, MODE_AUTOMATIC, device)
 
         label_desired_position = label_generate(
                                                     self,
@@ -317,9 +282,17 @@ class HomePageFrame(customtkinter.CTkFrame):
         control_buttons_container.grid_rowconfigure(ROW_ZERO, weight = 1)
         control_buttons_container.grid_columnconfigure(COLUMN_ZERO, weight = 1)
 
-        btn_submit_test  = button_generate(control_buttons_container, 0, 0, 1, 1, PAD_X_USUAL, PAD_Y_USUAL, "Test One Repetition")
+        btn_submit_test  = button_generate(
+                                            control_buttons_container, 
+                                            0, 
+                                            0, 
+                                            1, 
+                                            1, 
+                                            PAD_X_USUAL, 
+                                            PAD_Y_USUAL, 
+                                            "Test One Repetition")
         btn_submit_test.configure(
-                                    command = lambda : self.button_submit_test_click(btn_submit_test, entry_desired_position, entry_desired_turns, combobox_movement, thread_services), 
+                                    command = lambda : self.button_submit_test_click(btn_submit_test, entry_desired_position, entry_desired_turns, combobox_movement, thread_services, device), 
                                     fg_color = '#66CD00', 
                                     text_color = '#000000',
                                     width = 150,
@@ -347,12 +320,14 @@ class HomePageFrame(customtkinter.CTkFrame):
                                     PAD_X_USUAL, 
                                     PAD_Y_USUAL, 
                                     "Back")
-        btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
+        btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete, thread_services, device))
 
-    def button_manual_mode_click(self, button_manual_mode, button_auto_mode):
+    def button_manual_mode_click(self, button_manual_mode, button_auto_mode, thread_services, device):
         """! Generates and places all items related to the manual mode
         @param button_manual_mode   Button object for the manual mode option
         @param button_auto_mode     Button object for the automatic mode option
+        @param thread_services
+        @param device               Serial object currently connected to the application
         """
         # Reset the grid positioning
         button_manual_mode.grid_forget()
@@ -369,7 +344,7 @@ class HomePageFrame(customtkinter.CTkFrame):
         self.list_directions_buttons = self.generate_directions_buttons()
 
         # Generate sliders
-        list_slider_items = generate_sliders(self, MODE_MANUAL)
+        list_slider_items = generate_sliders(self, MODE_MANUAL, device)
         
         # Generate return button and items to delete when pressed
         list_items_to_delete = [
@@ -386,7 +361,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                     PAD_X_USUAL, 
                                     PAD_Y_USUAL, 
                                     "Back")
-        btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete))
+        btn_back.configure(command = lambda : self.button_back_click(btn_back, list_items_to_delete, thread_services, device))
 
     def __init__(self, master, thread_services, connected_device, **kwargs):
         """! Initialisation of a Home Page Frame
@@ -416,9 +391,5 @@ class HomePageFrame(customtkinter.CTkFrame):
                                             PAD_Y_USUAL, 
                                             "Automatic mode")
 
-        btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode))
-        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode, thread_services))
-
-        # Continous read of the serial communication data is started if a device is connected
-        thread_rx_data = Thread(target = read_rx_buffer, args = (thread_services.home_page_stop_threads_event, ))
-        thread_rx_data.start()
+        btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))
+        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))

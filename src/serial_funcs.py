@@ -9,9 +9,14 @@
 import serial
 import time
 
+from common import *
+
 path_logs = 'logs/encoder_logs.txt'
 
 # Constants
+## Index position of the connected device
+INDEX_STM32 = 0
+
 BAUDRATE = 115200
 ENDIANNESS = 'little'
 NUM_BYTES_TO_READ = 4
@@ -91,7 +96,7 @@ g_list_connected_device_info = [0]
 g_list_message_info = [0, 0, 0, 0]
 
 # Functions
-def read_rx_buffer(self, stop_event):
+def read_rx_buffer(stop_event, connected_device):
     """! Reads serial data in a continuous stream\n
     Rate of reading must be the same of higher than the rate of sending from the uC
     @param stop_event      When set (true), stops the data reception
@@ -99,7 +104,7 @@ def read_rx_buffer(self, stop_event):
     while (stop_event.is_set() != True):
         receive_serial_data(
                             g_list_message_info,
-                            g_list_connected_device_info)
+                            connected_device)
 
         time.sleep(0.05)
 
@@ -140,7 +145,7 @@ def receive_serial_data(list_message_info, list_com_device_info):
     """
     rx_buffer = [0, 0]
 
-    if (list_com_device_info[0] != 0):
+    if (list_com_device_info[0] != None):
         rx_buffer[0] = list_com_device_info[0].read(NUM_BYTES_TO_READ)
         rx_buffer[1] = list_com_device_info[0].read(NUM_BYTES_TO_READ)
 
@@ -157,21 +162,20 @@ def receive_serial_data(list_message_info, list_com_device_info):
                 " State: "               + str(list_message_info[INDEX_STATUS_MOTOR])
             )
 
-def transmit_serial_data(id, command, mode, data, list_com_device_info):
+def transmit_serial_data(id, command, mode, data, connected_device):
     """! Builds the desired message to transmit and writes it to the microcontroler
     @param id               The ID of the component to write to
     @param command          The command to write to the component
     @param mode             The mode in which the test bench is functionning
     @param data             The data to transmit to the component
-    @list_com_device_info   Notable information for all connected devices
+    @connected_device       The serial object currently connected to the application
     """
-    if (list_com_device_info[0] != 0):
-
+    if (connected_device[INDEX_STM32] != None):
         # Create message with appropriate positioning of bytes
         message_to_send = data + (command << 16) + (mode << 21) + (id << 24)
 
         bytes_to_send = message_to_send.to_bytes(NUM_BYTES_TO_SEND, ENDIANNESS)
-        list_com_device_info[0].write(bytes_to_send)
+        connected_device[INDEX_STM32].write(bytes_to_send)
 
         print("Message sent: ", bytes_to_send.hex())
     else:

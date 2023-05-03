@@ -9,6 +9,8 @@
 import tkinter
 import customtkinter
 
+from serial_funcs import transmit_serial_data, ID_MOTOR_ADAPT, ID_MOTOR_HORIZONTAL, ID_MOTOR_VERTICAL_LEFT, COMMAND_MOTOR_CHANGE_SPEED, MODE_CHANGE_PARAMS
+
 # Global constants
 ## Clock frequency used by the STM32
 CLOCK_FREQUENCY = 72000000
@@ -246,9 +248,63 @@ def calculate_speed_turn_per_sec(slider_value):
 
     return gearbox_turn_per_sec
 
-def generate_sliders(self, chosen_mode):
+def slider_speed_callback(slider_value, list_slider_info, slider_type, label_slider, device):
+    """! Every time a new value is set, sends the updated desired speed value to the device
+    @param slider_value         The selected speed value for the vertical motor speed
+    @param list_slider_info     Notable information for a specific slider
+    @param device               Currently connected Serial object
+    """
+    if (device[0] != 0):
+        slider_value = round(slider_value)
+        previous_slider_value = round(list_slider_info[SLIDER_PREV_VALUE_INDEX])
+
+        if (slider_value != previous_slider_value):
+            if (slider_type == "Vertical"):
+                transmit_serial_data(
+                                        ID_MOTOR_VERTICAL_LEFT,
+                                        COMMAND_MOTOR_CHANGE_SPEED,
+                                        MODE_CHANGE_PARAMS,
+                                        slider_value,
+                                        device)
+                
+                speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
+
+                list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = speed_value_mm_per_sec
+                label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
+
+            if (slider_type == "Horizontal"):
+                transmit_serial_data(
+                                        ID_MOTOR_HORIZONTAL,
+                                        COMMAND_MOTOR_CHANGE_SPEED,
+                                        MODE_CHANGE_PARAMS,
+                                        slider_value,
+                                        device)
+                
+                speed_value_mm_per_sec = calculate_speed_mm_per_sec(slider_value)
+
+                list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = speed_value_mm_per_sec
+                label_slider.configure(text = (str(speed_value_mm_per_sec) + " mm/s"))
+            
+            if (slider_type == "Adaptor"):
+                transmit_serial_data(
+                                        ID_MOTOR_ADAPT,
+                                        COMMAND_MOTOR_CHANGE_SPEED,
+                                        MODE_CHANGE_PARAMS,
+                                        slider_value,
+                                        device)
+                
+                gearbox_speed_turn_per_sec = calculate_speed_turn_per_sec(slider_value)
+                gearbox_speed_string = f"{gearbox_speed_turn_per_sec:.2f}"
+
+                list_slider_info[SLIDER_PREV_SPEED_VALUE_MM_PER_SEC_INDEX] = float(gearbox_speed_string)
+                label_slider.configure(text = (gearbox_speed_string + " turn/s"))
+
+            list_slider_info[SLIDER_PREV_VALUE_INDEX] = slider_value
+
+def generate_sliders(self, chosen_mode, device):
     """! Generates and places the sliders and their labels depending on the type of mode chosen by the user
     @param chosen_mode      Manual or automatic mode - Chosen by the user
+    @param device           The Serial object currently connected to the application
     @return     A list of the items related to slider positioning
     """
     list_slider_items = []
@@ -291,12 +347,12 @@ def generate_sliders(self, chosen_mode):
                                                 5,
                                                 SLIDER_VERTICAL_SPEED_RANGE_MAX)
         slider_vertical_speed.set(self.list_slider_vertical_info[SLIDER_PREV_VALUE_INDEX])
-        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
+        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_vertical_info,
                                                                                                                                 "Vertical",
                                                                                                                                 label_visualize_vertical_speed,
-                                                                                                                                g_list_connected_device_info))
+                                                                                                                                device))
 
         slider_horizontal_speed = slider_generate(
                                                     self,
@@ -308,12 +364,12 @@ def generate_sliders(self, chosen_mode):
                                                     5,
                                                     SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
         slider_horizontal_speed.set(self.list_slider_horizontal_info[SLIDER_PREV_VALUE_INDEX])
-        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
+        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_horizontal_info,
                                                                                                                                 "Horizontal",
                                                                                                                                 label_visualize_horizontal_speed,
-                                                                                                                                g_list_connected_device_info))
+                                                                                                                                device))
 
         slider_adaptor_speed = slider_generate(
                                                 self,
@@ -325,12 +381,12 @@ def generate_sliders(self, chosen_mode):
                                                 5,
                                                 SLIDER_ADAPTOR_SPEED_RANGE_MAX)
         slider_adaptor_speed.set(self.list_slider_adaptor_info[SLIDER_PREV_VALUE_INDEX])
-        slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : self.slider_speed_callback(
+        slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_adaptor_info,
                                                                                                                                 "Adaptor",
                                                                                                                                 label_visualize_rotation_speed,
-                                                                                                                                g_list_connected_device_info))
+                                                                                                                                device))
 
         label_vertical_speed_slider     = label_generate(
                                                             self,
@@ -398,12 +454,12 @@ def generate_sliders(self, chosen_mode):
                                                     5,
                                                     SLIDER_VERTICAL_SPEED_RANGE_MAX)
         slider_vertical_speed.set(self.list_slider_vertical_info[SLIDER_PREV_VALUE_INDEX])
-        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : self.slider_speed_callback(
+        slider_vertical_speed.configure(command = lambda slider_value = slider_vertical_speed.get() : slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_vertical_info,
                                                                                                                                 "Vertical",
                                                                                                                                 label_visualize_vertical_speed,
-                                                                                                                                g_list_connected_device_info))
+                                                                                                                                device))
 
         slider_horizontal_speed = slider_generate(
                                                     self,
@@ -415,12 +471,12 @@ def generate_sliders(self, chosen_mode):
                                                     5,
                                                     SLIDER_HORIZONTAL_SPEED_RANGE_MAX)
         slider_horizontal_speed.set(self.list_slider_horizontal_info[SLIDER_PREV_VALUE_INDEX])
-        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : self.slider_speed_callback(
+        slider_horizontal_speed.configure(command = lambda slider_value = slider_horizontal_speed.get() : slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_horizontal_info,
                                                                                                                                 "Horizontal",
                                                                                                                                 label_visualize_horizontal_speed,
-                                                                                                                                g_list_connected_device_info))
+                                                                                                                                device))
 
         slider_adaptor_speed = slider_generate(
                                                     self,
@@ -432,12 +488,12 @@ def generate_sliders(self, chosen_mode):
                                                     5,
                                                     SLIDER_ADAPTOR_SPEED_RANGE_MAX)
         slider_adaptor_speed.set(self.list_slider_adaptor_info[SLIDER_PREV_VALUE_INDEX])
-        slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : self.slider_speed_callback(
+        slider_adaptor_speed.configure(command = lambda slider_value = slider_adaptor_speed.get() : slider_speed_callback(
                                                                                                                                 slider_value,
                                                                                                                                 self.list_slider_adaptor_info,
                                                                                                                                 "Adaptor",
                                                                                                                                 label_visualize_rotation_speed,
-                                                                                                                                g_list_connected_device_info))
+                                                                                                                                device))
 
         label_vertical_speed_slider     = label_generate(
                                                             self,
