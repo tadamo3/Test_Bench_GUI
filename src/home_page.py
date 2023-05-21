@@ -28,17 +28,8 @@ class HomePageFrame(customtkinter.CTkFrame):
     # It is kept accessible to the main app class to bind and unbind the keys when not in the home page frame
     list_directions_buttons = []
 
-    ## List to contain the previous slider value and the previous speed value of the vertical slider
-    list_slider_vertical_info = [0, 0]
-
-    ## List to contain the previous slider value and the previous speed value of the horizontal slider
-    list_slider_horizontal_info = [0, 0]
-
-    ## List to contain the previous slider value and the previous speed value of the adaptor slider
-    list_slider_adaptor_info = [0, 0]
-
     ## Flag to indicate to class functions the state of the thread
-    flag_is_auto_test_thread_stopped = False
+    flag_is_auto_test_thread_stopped = True
 
     def generate_title_frame(self, title):
         """! Generates and places the title of the frame
@@ -151,7 +142,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                             "Automatic mode")
 
         btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))
-        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))
+        btn_auto_mode.configure(command = lambda : self.button_auto_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))
 
     def button_submit_test_click(self, button_submit, entry_position, entry_turns, combobox_direction, thread_services, connected_device):
         """! Verifies the inputs given in the automatic mode control page and starts the appropriate thread to test the desired movement
@@ -185,7 +176,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                     self.flag_is_auto_test_thread_stopped = True
 
 
-    def button_start_auto_mode_click(self, button_manual_mode, button_auto_mode, thread_services, device):
+    def button_auto_mode_click(self, button_manual_mode, button_auto_mode, thread_services, device):
         """! Generates and places all items related to the automatic mode
         @param button_manual_mode   Button object for the manual mode option
         @param button_auto_mode     Button object for the automatic mode option
@@ -227,7 +218,7 @@ class HomePageFrame(customtkinter.CTkFrame):
                                 pady        = (0, PAD_Y_USUAL),
                                 sticky      = 'nsew')
 
-        list_slider_items = generate_sliders(self, MODE_AUTOMATIC, device)
+        list_slider_items = generate_sliders(self, MODE_AUTOMATIC_TEST, device)
 
         label_desired_position = label_generate(
                                                     self,
@@ -392,4 +383,4 @@ class HomePageFrame(customtkinter.CTkFrame):
                                             "Automatic mode")
 
         btn_manual_mode.configure(command = lambda : self.button_manual_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))
-        btn_auto_mode.configure(command = lambda : self.button_start_auto_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))
+        btn_auto_mode.configure(command = lambda : self.button_auto_mode_click(btn_auto_mode, btn_manual_mode, thread_services, connected_device))

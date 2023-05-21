@@ -100,7 +100,7 @@ class AutomaticMode():
         
         return data
 
-    def auto_mode(position_to_reach, directions, number_of_turns, number_reps_to_do, label_reps_actual, stop_event, pause_event):
+    def auto_mode(position_to_reach, directions, number_of_turns, number_reps_to_do, label_reps_actual, connected_device, stop_event, pause_event):
         """! Sends correct commands alternately to the microcontroler in order to make the tool move from point A to point B and back to point A\n
                 This function is initialized every time a test needs to be executed (and will subsequently end with its corresponding thread)
         @param position_to_reach    The amplitude of the movement in millimeters
@@ -108,6 +108,7 @@ class AutomaticMode():
         @param number_of_turns      Number of turns to be done by the adaptor motor
         @param number_reps_to_do    Number of repetitions to execute before a test is deemed complete
         @param label_reps_actual    Label object to update the number of repetitions that have been completed by the testbench
+        @param connected_device     The Serial object currently connected to the application
         @param stop_event           Thread event to stop any other movement to be executed - If set, will reset the number of repetitions executed
         @param pause_event          Thread event to pause the execution of movements - If set, will not reset the number of repetitions executed   
         """
@@ -124,7 +125,7 @@ class AutomaticMode():
                                     command_a,
                                     MODE_POSITION_CONTROL,
                                     data_to_send,
-                                    g_list_connected_device_info)
+                                    connected_device)
 
             AutomaticMode.previous_checkpoint_to_reach = AutomaticMode.current_checkpoint_to_reach
             AutomaticMode.current_checkpoint_to_reach = CHECKPOINT_B
@@ -158,10 +159,12 @@ class AutomaticMode():
                                                 command_a,
                                                 MODE_POSITION_CONTROL,
                                                 data_to_send,
-                                                g_list_connected_device_info)
+                                                connected_device)
+                        
+                        current_process_state = AUTO_MODE_STATE_WAITING_FOR_ANSWER
                         
                         AutomaticMode.previous_checkpoint_to_reach = AutomaticMode.current_checkpoint_to_reach
-                        AutomaticMode.current_checkpoint_to_reach = CHECKPOINT_A
+                        AutomaticMode.current_checkpoint_to_reach = CHECKPOINT_B
 
                     elif (AutomaticMode.current_checkpoint_to_reach == CHECKPOINT_B and AutomaticMode.previous_checkpoint_to_reach == CHECKPOINT_A):
                         # Go to B position
@@ -170,20 +173,20 @@ class AutomaticMode():
                                                 command_b,
                                                 MODE_POSITION_CONTROL,
                                                 data_to_send,
-                                                g_list_connected_device_info)
+                                                connected_device)
                         
                         current_process_state = AUTO_MODE_STATE_WAITING_FOR_ANSWER
 
                         AutomaticMode.previous_checkpoint_to_reach = AutomaticMode.current_checkpoint_to_reach
-                        AutomaticMode.current_checkpoint_to_reach = CHECKPOINT_B
+                        AutomaticMode.current_checkpoint_to_reach = CHECKPOINT_A
                         
                         counter_repetitions = counter_repetitions + 1
 
                 label_reps_actual.configure(text = str(counter_repetitions))
 
-                time.sleep(0.5)
+                time.sleep(0.1)
 
-            time.sleep(0.5)
+            time.sleep(0.1)
 
         # Reset the checkpoints in case of stop
         if (stop_event.is_set() == True):
@@ -192,6 +195,7 @@ class AutomaticMode():
 
     def auto_mode_test(position_to_reach, directions, number_of_turns, connected_device, stop_event):
         id, command_a, command_b = determine_trajectory_parameters(directions, AutomaticMode.list_movement_entries)
+        current_process_state = AUTO_MODE_STATE_INIT
 
         data_to_send = AutomaticMode.convert_data_number_of_turns(id, position_to_reach, number_of_turns)
 
@@ -202,21 +206,32 @@ class AutomaticMode():
                                 MODE_POSITION_CONTROL,
                                 data_to_send,
                                 connected_device)
+        
+        current_process_state = AUTO_MODE_STATE_WAITING_FOR_ANSWER
 
         # Static checkpoint since there is only one repetition needed
         static_current_checkpoint_to_reach = CHECKPOINT_B
         flag_is_trajectory_completed = False
 
         while (stop_event.is_set() != True and flag_is_trajectory_completed == False):
-            if ((g_list_message_info[INDEX_STATUS_MOTOR] == MOTOR_STATE_AUTO_END_OF_TRAJ) and (static_current_checkpoint_to_reach == CHECKPOINT_B)):
-                transmit_serial_data(
-                                        id,
-                                        command_b,
-                                        MODE_POSITION_CONTROL,
-                                        data_to_send,
-                                        connected_device)
+            if (current_process_state == AUTO_MODE_STATE_WAITING_FOR_ANSWER):
+                if (g_list_message_info[INDEX_STATUS_MOTOR] == MOTOR_STATE_AUTO_IN_TRAJ):
+                    current_process_state = AUTO_MODE_STATE_WAITING_END_OF_TRAJ
 
-                static_current_checkpoint_to_reach = CHECKPOINT_A
-                flag_is_trajectory_completed = True
+            elif (current_process_state == AUTO_MODE_STATE_WAITING_END_OF_TRAJ):
+                if (g_list_message_info[INDEX_STATUS_MOTOR] == MOTOR_STATE_AUTO_END_OF_TRAJ):
+                    current_process_state = AUTO_MODE_STATE_READY_TO_SEND_COMMAND
+
+            elif (current_process_state == AUTO_MODE_STATE_READY_TO_SEND_COMMAND):
+                if ((g_list_message_info[INDEX_STATUS_MOTOR] == MOTOR_STATE_AUTO_END_OF_TRAJ) and (static_current_checkpoint_to_reach == CHECKPOINT_B)):
+                    transmit_serial_data(
+                                            id,
+                                            command_b,
+                                            MODE_POSITION_CONTROL,
+                                            data_to_send,
+                                            connected_device)
+
+                    static_current_checkpoint_to_reach = CHECKPOINT_A
+                    flag_is_trajectory_completed = True
                     
             time.sleep(0.1)

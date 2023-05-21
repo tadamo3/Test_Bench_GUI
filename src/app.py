@@ -154,7 +154,11 @@ class App(customtkinter.CTk):
                                                                                         thread_services = thread_services,
                                                                                         connected_device = connected_device_object,
                                                                                         fg_color="#1a1822")
-        self.dict_frames[self.list_frames[INDEX_PROGRAMS]]  = programs_page.ProgramsPageFrame(master = self, fg_color="#1a1822")
+        self.dict_frames[self.list_frames[INDEX_PROGRAMS]]  = programs_page.ProgramsPageFrame(
+                                                                                                master = self, 
+                                                                                                thread_services = thread_services,
+                                                                                                connected_device = connected_device_object,
+                                                                                                fg_color="#1a1822")
 
         # Populate the left side frame and link the correct frame to initialize with the correct button
         for i in range(len(self.dict_frames)):
