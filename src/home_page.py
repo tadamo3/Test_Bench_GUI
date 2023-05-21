@@ -275,8 +275,8 @@ class HomePageFrame(customtkinter.CTkFrame):
 
         btn_submit_test  = button_generate(
                                             control_buttons_container, 
-                                            0, 
-                                            0, 
+                                            ROW_ZERO, 
+                                            COLUMN_ZERO, 
                                             1, 
                                             1, 
                                             PAD_X_USUAL, 

@@ -94,7 +94,15 @@ class ProgramsList(customtkinter.CTkScrollableFrame):
                 flag_is_program_already_existing = True
         
         if (flag_is_program_already_existing == False):
-            button_file = button_generate(self, self.counter_programs, 0, 1, 1, 20, 20, name_program)
+            button_file = button_generate(
+                                            self,
+                                            self.counter_programs,
+                                            COLUMN_ZERO,
+                                            1,
+                                            1,
+                                            PAD_X_USUAL,
+                                            PAD_Y_USUAL,
+                                            name_program)
 
             self.list_buttons_programs_names.append((name_program + '.txt'))
             self.list_buttons_programs_objects.append(button_file)
@@ -118,6 +126,10 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
     flag_is_auto_thread_paused = False
     
     def button_pause_click(self, button_pause, thread_services):
+        """! Pauses or resumes a program and updates the color code of the displayed buttons
+        @param button_pause     The button pause object
+        @param thread_services  All thread related services to be dispatched throughout the different GUI frames 
+        """
         if (self.flag_is_auto_thread_paused == False):
             thread_services.pause_auto_mode_thread()
             button_pause.configure(text = "Resume Program", fg_color = '#66CD00', text_color = '#000000')
@@ -130,6 +142,13 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
             self.flag_is_auto_thread_paused = False
 
     def button_submit_click(self, button_submit, button_pause, list_objects, thread_services, connected_device):
+        """! Stops or starts a program and updates the color code of the displayed button
+        @param button_submit        The entry button object
+        @param button_pause         The pause button object
+        @param list_objects         List of the different parameters for the tests
+        @param thread_services      All thread related services to be dispatched throughout the different GUI frames
+        @param connected_device     The serial object connected to the application
+        """
         desired_position = int(list_objects[INDEX_ENTRY_DESIRED_POSITION].get())
         desired_direction = list_objects[INDEX_COMBOBOX_MOVEMENTS].get()
         
@@ -137,21 +156,6 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         desired_reps = int(list_objects[INDEX_ENTRY_NUMBER_REPS_TO_DO].get())
 
         error_msg = None
-
-        """# Cannot exceed max value
-        # For any vertical movement 
-        if desired_direction == AutomaticMode.list_movement_entries[0] or desired_direction == AutomaticMode.list_movement_entries[1]:
-            if desired_position > MAX_VERTICAL: 
-                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
-            
-        # For any horizontal movement
-        if desired_direction == AutomaticMode.list_movement_entries[2] or desired_direction == AutomaticMode.list_movement_entries[3]:
-            if desired_position > MAX_HORIZONTAL: 
-                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
-        
-        # Combobox cannot be empty
-        if desired_direction == "Choose movement":
-            error_msg = CTkMessagebox(title="Error", message="Missing desired direction", icon="cancel")"""
         
         if (error_msg == None):
             if (button_submit.cget("text") == "Start Program"): 
@@ -170,6 +174,10 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                     self.flag_is_auto_thread_stopped = True
 
     def file_creator(self, filename, frame_programs_list):
+        """! Creates a text file containing all relevant parameters for an automatic test
+        @param filename             Name of the file to be created
+        @param frame_programs_list  List of all the created automatic programs
+        """
         complete_path_new_file = path_to_programs_folder + '\\' + filename + '.txt'
         name_file_to_show = filename.replace(path_to_programs_folder + '\\', '') + ".txt"
 
@@ -209,6 +217,10 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
             print(filename)
 
     def button_select_program_callback(self, filename):
+        """! Callback function when selecting a program from the scrollable frame\n
+                Inserts all the parameters of the selected test in their respective boxes
+        @param filename     Name of the file that was selected
+        """
         print(filename)
         filename_to_open = filename + '.txt'
         complete_path = path_to_programs_folder + '\\' + filename_to_open
@@ -247,6 +259,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
     def __init__(self, master, thread_services, connected_device, **kwargs):
         """! Initialisation of a Programs Page Frame
+                Defines the components and callback functions of the programs page
         """
         super().__init__(master, **kwargs)
 
@@ -315,98 +328,98 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
 
         label_desired_position = label_generate(
                                                     self, 
-                                                    0, 
+                                                    ROW_ZERO, 
+                                                    COLUMN_ONE, 
                                                     1, 
                                                     1, 
-                                                    1, 
-                                                    20, 
-                                                    (20, 5), 
+                                                    PAD_X_USUAL, 
+                                                    (PAD_Y_USUAL, 5), 
                                                     "Amplitude (mm)")
         entry_desired_position = entry_generate(
                                                 self, 
+                                                ROW_ONE, 
+                                                COLUMN_ONE, 
                                                 1, 
                                                 1, 
-                                                1, 
-                                                1, 
-                                                20, 
-                                                (0, 20), 
+                                                PAD_X_USUAL, 
+                                                (PAD_Y_USUAL, 20), 
                                                 "Enter here")
 
         label_desired_turns = label_generate(
                                                 self, 
-                                                2, 
+                                                ROW_TWO, 
+                                                COLUMN_ONE, 
                                                 1, 
                                                 1, 
-                                                1, 
-                                                20, 
-                                                (20, 5), 
+                                                PAD_X_USUAL, 
+                                                (PAD_Y_USUAL, 5), 
                                                 "Number of turns")
         entry_desired_turns = entry_generate(
                                                 self, 
-                                                3, 
+                                                ROW_THREE, 
+                                                COLUMN_ONE, 
                                                 1, 
                                                 1, 
-                                                1, 
-                                                20, 
-                                                (0, 20), 
+                                                PAD_X_USUAL, 
+                                                (PAD_Y_USUAL, 20), 
                                                 "Enter here")
 
         label_number_reps_to_do_indicator = label_generate(
                                                             self, 
-                                                            4, 
+                                                            ROW_FOUR, 
+                                                            COLUMN_ONE, 
                                                             1, 
                                                             1, 
-                                                            1, 
-                                                            20, 
-                                                            (20, 5), 
+                                                            PAD_X_USUAL, 
+                                                            (PAD_Y_USUAL, 5), 
                                                             "Number of reps")
         entry_number_reps_to_do = entry_generate(
                                                     self, 
-                                                    5,
+                                                    ROW_FIVE,
+                                                    COLUMN_ONE, 
                                                     1, 
                                                     1, 
-                                                    1, 
-                                                    20, 
-                                                    (0, 20), 
+                                                    PAD_X_USUAL, 
+                                                    (0, PAD_Y_USUAL), 
                                                     "Enter here")
 
         label_filename_entry = label_generate(
                                                 self, 
-                                                6, 
+                                                ROW_SIX, 
+                                                COLUMN_ONE, 
                                                 1, 
                                                 1, 
-                                                1, 
-                                                20, 
-                                                (20, 5), 
+                                                PAD_X_USUAL, 
+                                                (PAD_Y_USUAL, 5), 
                                                 "Enter filename")
         entry_filename = entry_generate(
                                             self, 
-                                            7, 
+                                            ROW_SEVEN, 
+                                            COLUMN_ONE, 
                                             1, 
                                             1, 
-                                            1, 
-                                            20, 
-                                            (0, 20), 
+                                            PAD_X_USUAL, 
+                                            (0, PAD_Y_USUAL), 
                                             "File name")
 
         label_number_reps_actual_indicator = label_generate(
                                                                 control_buttons_container, 
-                                                                0,
-                                                                2, 
+                                                                ROW_ZERO,
+                                                                COLUMN_TWO, 
                                                                 1, 
                                                                 1, 
-                                                                (20, 5), 
-                                                                20, 
+                                                                (PAD_X_USUAL, 5), 
+                                                                PAD_Y_USUAL, 
                                                                 "Number of reps done: ")
         label_number_reps_actual_indicator.configure(width = 120, height = 50, fg_color = '#453D52')
         label_number_reps_actual = label_generate(
                                                     control_buttons_container, 
-                                                    0, 
-                                                    3, 
+                                                    ROW_ZERO, 
+                                                    COLUMN_THREE, 
                                                     1, 
                                                     1, 
-                                                    (0, 20), 
-                                                    20, 
+                                                    (0, PAD_X_USUAL), 
+                                                    PAD_Y_USUAL, 
                                                     "0")
         label_number_reps_actual.configure(width = 50, height = 50, fg_color = '#453D52')
 
@@ -442,8 +455,24 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                                                                             width = 150,
                                                                             height = 50)
 
-        btn_pause  = button_generate(control_buttons_container, 0, 1, 1, 1, 20, 20, "Pause Program")
-        btn_submit  = button_generate(control_buttons_container, 0, 0, 1, 1, 20, 20, "Start Program")
+        btn_pause  = button_generate(
+                                        control_buttons_container,
+                                        ROW_ZERO,
+                                        COLUMN_ONE,
+                                        1,
+                                        1,
+                                        PAD_X_USUAL,
+                                        PAD_Y_USUAL,
+                                        "Pause Program")
+        btn_submit  = button_generate(
+                                        control_buttons_container,
+                                        ROW_ZERO,
+                                        COLUMN_ZERO,
+                                        1,
+                                        1,
+                                        PAD_X_USUAL,
+                                        PAD_Y_USUAL,
+                                        "Start Program")
 
         btn_pause.configure(command = lambda : self.button_pause_click(
                                                                             btn_pause,
