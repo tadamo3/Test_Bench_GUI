@@ -73,7 +73,11 @@ class ThreadManager():
         self.auto_mode_pause_thread_event.set()
 
     def pause_auto_mode_thread(self):
+        """! Manages the pause of the automatic thread of the programs page for official automatic tests
+        """
         self.auto_mode_pause_thread_event.set()
 
     def resume_auto_mode_thread(self):
+        """! Manages the resume of the automatic thread of the programs page for official automatic tests
+        """
         self.auto_mode_pause_thread_event.clear()

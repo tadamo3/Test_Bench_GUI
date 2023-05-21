@@ -194,6 +194,14 @@ class AutomaticMode():
             AutomaticMode.previous_checkpoint_to_reach   = CHECKPOINT_B
 
     def auto_mode_test(position_to_reach, directions, number_of_turns, connected_device, stop_event):
+        """! This function lets the user test an iteration of an automatic movement
+                It executes a back-and-forth between the two positions once
+        @param position_to_reach    The amplitude of the movement in millimeters
+        @param directions           Combination of movements given to determine the trajectory
+        @param number_of_turns      Number of turns to be done by the adaptor motor
+        @param connected_device     The Serial object currently connected to the application
+        @param stop_event           Thread event to stop any other movement to be executed - If set, will reset the number of repetitions executed
+        """
         id, command_a, command_b = determine_trajectory_parameters(directions, AutomaticMode.list_movement_entries)
         current_process_state = AUTO_MODE_STATE_INIT
 
