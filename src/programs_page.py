@@ -253,6 +253,10 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
             # Set the adaptor speed slider
             self.list_objects_programs_page[INDEX_SLIDER_ADAPTOR_SPEED].set(int(values[5]))
 
+            # Set the number of repetitions to do
+            self.list_objects_programs_page[INDEX_ENTRY_NUMBER_REPS_TO_DO].delete(0, len(self.list_objects_programs_page[INDEX_ENTRY_NUMBER_REPS_TO_DO].get()))
+            self.list_objects_programs_page[INDEX_ENTRY_NUMBER_REPS_TO_DO].insert(0, values[6])
+
             # Set the filename
             self.list_objects_programs_page[INDEX_ENTRY_FILENAME].delete(0, len(self.list_objects_programs_page[INDEX_ENTRY_FILENAME].get()))
             self.list_objects_programs_page[INDEX_ENTRY_FILENAME].insert(0, values[7])
