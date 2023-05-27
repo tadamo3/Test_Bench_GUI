@@ -36,26 +36,23 @@ CBBOX_WIDTH = 175
 ## Serial object representing the connected STM32
 connected_device = [0]
 
+binding_event_id = [0]
+
 # Functions
-def bind_unbind_keys_manual_control(frame_to_init, frame_object, current_func_id, connected_device_object):
+def bind_unbind_keys_manual_control(frame_to_init, frame_object, connected_device_object):
     """! Binds keyboard events to specific actions for manual control of the tool
     @param frame_to_init    Name of the frame that is currently being initialized
     @param frame_object     Object of the frame that is currently being initialized
     @param connected_device_object          Serial object currently connected to the application
-    @param current_func_id  ID of a successful binding function (must be passed in order to unbind correct events)
-    @return Current function ID corresponding to the binding or unbinding of the keyboard events
     """
-    func_id = current_func_id
-
     if (frame_to_init == 'Home'):
-        func_id = app_window.bind('<KeyPress>', lambda event, previous_motor =  manual_control.previous_motor_controlled: manual_control.key_pressed(event, previous_motor, frame_object.list_directions_buttons, connected_device_object))
+        binding_event_id[0] = app_window.bind('<KeyPress>', lambda event, previous_motor =  manual_control.previous_motor_controlled: manual_control.key_pressed(event, previous_motor, frame_object.list_directions_buttons, connected_device_object))
         app_window.bind('<KeyRelease>', lambda event, previous_motor = manual_control.previous_motor_controlled: manual_control.key_released(event, previous_motor, frame_object.list_directions_buttons, connected_device_object))
     else:
-        app_window.unbind('<KeyPress>', func_id)
+        if (binding_event_id[0] != None):
+            app_window.unbind('<KeyPress>', binding_event_id[0])
 
-    return func_id
-
-def frame_selector(frame_to_init, current_keyboard_binding_id, connected_device_object):
+def frame_selector(frame_to_init, connected_device_object):
     """! Sets desired frame as the visible frame (pushes back previous frame) \n
             Binds or unbinds keys related to the specific frame to be set
     @param frame_to_init                    Frame to initialize and put on top of others
@@ -75,7 +72,7 @@ def frame_selector(frame_to_init, current_keyboard_binding_id, connected_device_
                                         pady    = PAD_Y_USUAL,
                                         sticky  = 'nsew')
     
-    current_keyboard_binding_id = bind_unbind_keys_manual_control(frame_to_init, App.dict_frames[frame_to_init], current_keyboard_binding_id, connected_device_object)
+    bind_unbind_keys_manual_control(frame_to_init, App.dict_frames[frame_to_init], connected_device_object)
 
 def combobox_com_ports_generate(frame, strvar_com_port_placeholder):
     """! Creates a combobox to list out all COM ports currently used by computer
@@ -166,7 +163,7 @@ class App(customtkinter.CTk):
                                                                     frame_button_select_frames,
                                                                     text        = self.list_frames[i],
                                                                     hover_color = "red",
-                                                                    command     = lambda frame_to_init = self.list_frames[i] : frame_selector(frame_to_init, self.keyboard_binding_event_id, connected_device_object)))
+                                                                    command     = lambda frame_to_init = self.list_frames[i] : frame_selector(frame_to_init, connected_device_object)))
             self.list_btn_selector[i].grid(
                                             row     = i,
                                             column  = COLUMN_ONE, 

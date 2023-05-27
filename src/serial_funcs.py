@@ -17,9 +17,16 @@ path_logs = 'logs/encoder_logs.txt'
 ## Index position of the connected device
 INDEX_STM32 = 0
 
+## Used baudrate for serial communication
 BAUDRATE = 115200
+
+## Used endianness for sending data
 ENDIANNESS = 'little'
+
+## Number of bytes to read for every frame sent by the microcontroler
 NUM_BYTES_TO_READ = 4
+
+## Number of bytes to send to send a complete frame
 NUM_BYTES_TO_SEND = 4
 
 ## ID of Test Bench components - Must be the same as the ones found in Serial_Communication/serial_com.h
@@ -44,6 +51,7 @@ COMMAND_MOTOR_CHANGE_SPEED          = 7
 COMMAND_MOTOR_ADAPT_UP              = 8
 COMMAND_MOTOR_ADAPT_DOWN            = 9
 COMMAND_MOTOR_ADAPT_STOP            = 10
+COMMAND_SOFT_RESET                  = 11
 
 ## Motor possible states
 MOTOR_STATE_RESERVED            = 0
@@ -110,7 +118,7 @@ def read_rx_buffer(stop_event, connected_device):
 
 def connect_to_port(selected_com_port):
     """! Establishes connection with selected COM port
-    @param selected_com_port   Selected COM port
+    @param selected_com_port   The selected communication port on the computer
     @return The COM port object if connected, else None
     """
     is_port_open = False
@@ -143,19 +151,15 @@ def receive_serial_data(list_message_info, list_com_device_info):
     @param list_message_info        Notable information for the received serial message
     @param list_com_device_info     Notable information for all connected devices
     """
-    rx_buffer = [0, 0]
+    rx_buffer = [0]
 
     if (list_com_device_info[0] != None):
         rx_buffer[0] = list_com_device_info[0].read(NUM_BYTES_TO_READ)
-        rx_buffer[1] = list_com_device_info[0].read(NUM_BYTES_TO_READ)
-
         rx_buffer[0] = int.from_bytes(rx_buffer[0], ENDIANNESS)
-        rx_buffer[1] = int.from_bytes(rx_buffer[1], ENDIANNESS)
 
         list_message_info[INDEX_ID]                     = ((rx_buffer[0] & 0x00FF0000) >> 16)
         list_message_info[INDEX_STATUS_MOVEMENT_MOTOR]  = ((rx_buffer[0] & 0x0000FF00) >> 8)
         list_message_info[INDEX_STATUS_MOTOR]           = (rx_buffer[0] & 0x000000FF)
-        list_message_info[INDEX_MOTOR_POSITION]         = rx_buffer[1]
         print(
                 "ID: "                  + str(list_message_info[INDEX_ID]) +
                 " Status movement: "     + str(list_message_info[INDEX_STATUS_MOVEMENT_MOTOR]) +
