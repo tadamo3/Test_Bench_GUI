@@ -1,0 +1,5 @@
+doxygen/html/*
+doxygen/latex/*
+src/__pychache__/*
+programs/*
+logs/*
