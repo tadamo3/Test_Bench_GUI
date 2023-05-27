@@ -18,12 +18,22 @@ INDEX_MOVEMENT_RIGHT_LEFT       = 3
 INDEX_MOVEMENT_SCREW_UP_DOWN    = 4
 INDEX_MOVEMENT_SCREW_DOWN_UP    = 5
 
+## State of initialization of the automatic mode 
 AUTO_MODE_STATE_INIT                    = 0
+
+## State in which the automatic mode process waits for a confirmation of movement from the microcontroler
 AUTO_MODE_STATE_WAITING_FOR_ANSWER      = 1
+
+## State in which the automatic mode process waits for the microcontroler to send an end of movement frame
 AUTO_MODE_STATE_WAITING_END_OF_TRAJ     = 2
+
+## State in which the automatic mode process allows itself to send a new movement command
 AUTO_MODE_STATE_READY_TO_SEND_COMMAND   = 3
 
+## First checkpoint of the full movement to reach
 CHECKPOINT_A = 0
+
+## Second checkpoint of the full movement to reach
 CHECKPOINT_B = 1
 
 def determine_trajectory_parameters(directions, list_movements):

@@ -14,7 +14,6 @@ from CTkMessagebox import CTkMessagebox
 from glob import glob
 
 from serial_funcs import *
-import app
 from common import *
 from automatic_control import AutomaticMode
 
@@ -42,6 +41,7 @@ INDEX_LIST_SLIDER_SLIDER_VERTICAL_SPEED     = 3
 INDEX_LIST_SLIDER_SLIDER_HORIZONTAL_SPEED   = 4
 INDEX__LIST_SLIDER_SLIDER_ADAPTOR_SPEED     = 5
 
+## Generic path to the programs folder
 path_to_programs_folder = '..\\Test_Bench_GUI\\programs'
 
 # Classes
@@ -155,8 +155,8 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
         desired_turns = float(list_objects[INDEX_ENTRY_DESIRED_TURNS].get())
         desired_reps = int(list_objects[INDEX_ENTRY_NUMBER_REPS_TO_DO].get())
 
-        error_msg = None
-        
+        error_msg = self.verify_automatic_mode_parameters(list_objects)
+
         if (error_msg == None):
             if (button_submit.cget("text") == "Start Program"): 
                 button_submit.configure(text = "Stop Program", fg_color = '#EE3B3B')
@@ -172,6 +172,42 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                 if (self.flag_is_auto_thread_stopped == False):
                     thread_services.stop_auto_mode_thread()
                     self.flag_is_auto_thread_stopped = True
+
+    def verify_automatic_mode_parameters(list_objects):
+        """! Verifies the parameters of the automatic movement submission
+        @param list_objects List of the different parameters for the tests
+        @return Returns an empty error message if no errors are detected, non-null otherwise
+        """
+        desired_position = int(list_objects[INDEX_ENTRY_DESIRED_POSITION].get())
+        desired_direction = list_objects[INDEX_COMBOBOX_MOVEMENTS].get()
+        
+        desired_turns = float(list_objects[INDEX_ENTRY_DESIRED_TURNS].get())
+        desired_reps = int(list_objects[INDEX_ENTRY_NUMBER_REPS_TO_DO].get())
+
+        error_msg = None
+
+        if desired_direction == AutomaticMode.list_movement_entries[0] or desired_direction == AutomaticMode.list_movement_entries[1]:
+            if ((desired_position > MAX_VERTICAL) or (desired_position < 0)): 
+                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
+            
+        # For any horizontal movement
+        if desired_direction == AutomaticMode.list_movement_entries[2] or desired_direction == AutomaticMode.list_movement_entries[3]:
+            if ((desired_position > MAX_VERTICAL) or (desired_position < 0)):
+                error_msg = CTkMessagebox(title="Error", message="Exceeds maximum value", icon="cancel")
+        
+        # Combobox cannot be empty
+        if desired_direction == "Choose movement":
+            error_msg = CTkMessagebox(title="Error", message="Missing desired direction", icon="cancel")
+
+        # Turns cannot be negative
+        if desired_turns < 0:
+            error_msg = CTkMessagebox(title="Error", message="Number of turns cannot be negative", icon="cancel")
+
+        # Number of reps cannot be negative
+        if desired_reps < 0:
+            error_msg = CTkMessagebox(title="Error", message="Number of repetitions cannot be negative", icon="cancel")
+
+        return error_msg
 
     def file_creator(self, filename, frame_programs_list):
         """! Creates a text file containing all relevant parameters for an automatic test
