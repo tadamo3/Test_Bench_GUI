@@ -173,7 +173,7 @@ class ProgramsPageFrame(customtkinter.CTkFrame):
                     thread_services.stop_auto_mode_thread()
                     self.flag_is_auto_thread_stopped = True
 
-    def verify_automatic_mode_parameters(list_objects):
+    def verify_automatic_mode_parameters(self, list_objects):
         """! Verifies the parameters of the automatic movement submission
         @param list_objects List of the different parameters for the tests
         @return Returns an empty error message if no errors are detected, non-null otherwise
